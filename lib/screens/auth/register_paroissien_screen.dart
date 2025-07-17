@@ -1,0 +1,388 @@
+import 'package:flutter/material.dart';
+import '../../services/paroisse_service.dart';
+import '../../services/auth_service.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+
+class RegisterParoissienScreen extends StatefulWidget {
+  const RegisterParoissienScreen({Key? key}) : super(key: key);
+
+  @override
+  State<RegisterParoissienScreen> createState() => _RegisterParoissienScreenState();
+}
+
+class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _contactController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
+  final _dateNaissController = TextEditingController();
+  String? _selectedSexe;
+  String? _selectedSituation;
+  List<String> _sacrementsRecus = [];
+
+  Paroisse? _selectedParoisse;
+  bool _isLoading = false;
+  List<Paroisse> _paroisses = [];
+
+  final ParoisseService _paroisseService = ParoisseService();
+  final AuthService _authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadParoisses();
+  }
+
+  Future<void> _loadParoisses() async {
+    try {
+      final paroisses = await _paroisseService.fetchParoissesActives();
+      setState(() {
+        _paroisses = paroisses;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur chargement paroisses: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedParoisse == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez sélectionner une paroisse')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final success = await _authService.registerParoissien(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        contact: _contactController.text.trim(),
+        password: _passwordController.text,
+        passwordConfirmation: _passwordConfirmController.text,
+        paroisseId: _selectedParoisse!.id,
+        sexe: _selectedSexe!,
+        situationMatrimoniale: _selectedSituation!,
+        dateNaiss: _dateNaissController.text,
+        sacrementsRecus: _sacrementsRecus,
+      );
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Inscription réussie ! Veuillez vous connecter.')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur lors de l\'inscription')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _contactController.dispose();
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
+    _dateNaissController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.blue.shade50,
+      appBar: AppBar(
+        title: const Text('Inscription Paroissien'),
+        centerTitle: true,
+        backgroundColor: Colors.green.shade700,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: _paroisses.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : Form(
+                  key: _formKey,
+                  child: ListView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    children: [
+                      Column(
+                        children: [
+                          Center(
+                            child: Image.asset(
+                              'assets/images/logo/logo1.png',
+                              height: 100,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Paroisse Smart',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+
+                      // Nom complet
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(labelText: 'Nom complet'),
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Veuillez entrer votre nom' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(labelText: 'Email'),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Veuillez entrer votre email';
+                          final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                          if (!emailRegex.hasMatch(value)) return 'Email invalide';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Contact
+                      TextFormField(
+                        controller: _contactController,
+                        decoration: const InputDecoration(labelText: 'Contact'),
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Veuillez entrer votre contact';
+                          if (!RegExp(r'^\d{8,15}$').hasMatch(value)) return 'Contact invalide';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Sexe
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(labelText: 'Sexe'),
+                        value: _selectedSexe,
+                        items: ['Masculin', 'Féminin']
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .toList(),
+                        onChanged: (value) => setState(() => _selectedSexe = value),
+                        validator: (value) => value == null ? 'Veuillez sélectionner le sexe' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Situation matrimoniale
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(labelText: 'Situation matrimoniale'),
+                        value: _selectedSituation,
+                        items: ['Célibataire', 'Marié(e)', 'Veuf(ve)', 'Divorcé(e)']
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .toList(),
+                        onChanged: (value) => setState(() => _selectedSituation = value),
+                        validator: (value) =>
+                            value == null ? 'Veuillez sélectionner la situation matrimoniale' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Date de naissance
+                      TextFormField(
+                        controller: _dateNaissController,
+                        decoration:
+                            const InputDecoration(labelText: 'Date de naissance (YYYY-MM-DD)'),
+                        readOnly: true,
+                        onTap: () async {
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime(2000),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) {
+                            _dateNaissController.text = date.toIso8601String().substring(0, 10);
+                          }
+                        },
+                        validator: (value) =>
+                            value == null || value.isEmpty ? 'Date de naissance requise' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Sacrements reçus
+                      InputDecorator(
+                        decoration: const InputDecoration(labelText: 'Sacrements reçus'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CheckboxListTile(
+                              value: _sacrementsRecus.contains('Baptême'),
+                              onChanged: (val) => setState(() {
+                                if (val == true) {
+                                  _sacrementsRecus.add('Baptême');
+                                } else {
+                                  _sacrementsRecus.remove('Baptême');
+                                }
+                              }),
+                              title: const Text('Baptême'),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                            CheckboxListTile(
+                              value: _sacrementsRecus.contains('Confirmation'),
+                              onChanged: (val) => setState(() {
+                                if (val == true) {
+                                  _sacrementsRecus.add('Confirmation');
+                                } else {
+                                  _sacrementsRecus.remove('Confirmation');
+                                }
+                              }),
+                              title: const Text('Confirmation'),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                            CheckboxListTile(
+                              value: _sacrementsRecus.contains('Mariage'),
+                              onChanged: (val) => setState(() {
+                                if (val == true) {
+                                  _sacrementsRecus.add('Mariage');
+                                } else {
+                                  _sacrementsRecus.remove('Mariage');
+                                }
+                              }),
+                              title: const Text('Mariage'),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                            CheckboxListTile(
+                              value: _sacrementsRecus.contains('Aucun'),
+                              onChanged: (val) => setState(() {
+                                if (val == true) {
+                                  _sacrementsRecus.add('Aucun');
+                                } else {
+                                  _sacrementsRecus.remove('Aucun');
+                                }
+                              }),
+                              title: const Text('Aucun'),
+                              controlAffinity: ListTileControlAffinity.leading,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Paroisse
+                      DropdownSearch<Paroisse>(
+                        items: _paroisses,
+                        selectedItem: _selectedParoisse,
+                        itemAsString: (paroisse) => paroisse.nom,
+                        onChanged: (paroisse) {
+                          setState(() => _selectedParoisse = paroisse);
+                        },
+                        dropdownDecoratorProps: const DropDownDecoratorProps(
+                          dropdownSearchDecoration: InputDecoration(
+                            labelText: 'Paroisse',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        validator: (value) =>
+                            value == null ? 'Veuillez sélectionner une paroisse' : null,
+                        popupProps: const PopupProps.menu(
+                          showSearchBox: true,
+                          searchFieldProps: TextFieldProps(
+                            decoration: InputDecoration(
+                              hintText: 'Rechercher une paroisse...',
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Mot de passe
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(labelText: 'Mot de passe'),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.length < 8) {
+                            return 'Mot de passe trop court';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Confirmation mot de passe
+                      TextFormField(
+                        controller: _passwordConfirmController,
+                        decoration: const InputDecoration(labelText: 'Confirmer mot de passe'),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value != _passwordController.text) {
+                            return 'Les mots de passe ne correspondent pas';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                onPressed: _handleRegister,
+                                child: const Text(
+                                  'S\'inscrire',
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Vous avez déjà un compte ? "),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
+                            child: const Text(
+                              'Connectez-vous ici',
+                              style: TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}

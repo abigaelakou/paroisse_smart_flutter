@@ -16,7 +16,7 @@ class Paroisse {
 }
 
 class ParoisseService {
-  final String baseUrl = 'https://a9cb0983460d.ngrok-free.app/api';
+  final String baseUrl = 'https://www.paroissesmart.com/api';
 
   Future<List<Paroisse>> fetchParoissesActives() async {
     final response = await http.get(Uri.parse('$baseUrl/paroisses-actives'));

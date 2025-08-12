@@ -26,7 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     _profileService = ProfileService(
       Dio(BaseOptions(
-        baseUrl: 'https://a9cb0983460d.ngrok-free.app/api',
+        baseUrl: 'https://www.paroissesmart.com/api',
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer ${widget.token}',

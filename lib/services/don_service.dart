@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/don.dart';
 
 class DonService {
-  static const String baseUrl = 'https://a9cb0983460d.ngrok-free.app/api';
+  static const String baseUrl = 'https://www.paroissesmart.com/api';
 
   static Future<List<Don>> fetchMesDons(String token) async {
     final response = await http.get(

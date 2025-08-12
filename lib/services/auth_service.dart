@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
 class AuthService {
-  static const String _baseUrl = 'https://a9cb0983460d.ngrok-free.app/api';
+  static const String _baseUrl = 'https://www.paroissesmart.com/api';
   static const _tokenKey = 'auth_token';
   static const _userNameKey = 'user_name';
   static const _paroisseNomKey = 'paroisse_nom';

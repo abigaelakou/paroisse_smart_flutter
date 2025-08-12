@@ -1,0 +1,43 @@
+name: paroisse_smart_flutter
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.4.0
+  flutter_riverpod: ^2.5.1
+  flutter_dotenv: ^5.1.0
+  google_fonts: ^6.1.0
+  cupertino_icons: ^1.0.8
+  carousel_slider: ^5.1.1
+  intl: ^0.20.2
+  url_launcher: ^6.2.5
+  dropdown_search: ^5.0.6
+  shared_preferences: ^2.0.15
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo/app_icon.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/images/logo/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/logo/logo1.png
+    - assets/images/logo/app_icon.png
+    - assets/images/banner.jpg

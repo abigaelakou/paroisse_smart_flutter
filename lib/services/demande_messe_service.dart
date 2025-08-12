@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class DemandeMesseService {
-  static const String baseUrl = 'https://a9cb0983460d.ngrok-free.app/api';
+  static const String baseUrl = 'https://www.paroissesmart.com/api';
 
   /// Récupérer les types de messe selon la paroisse
  static Future<List<Map<String, dynamic>>> fetchTypesMesse(String token, int paroisseId) async {

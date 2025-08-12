@@ -11,7 +11,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://a9cb0983460d.ngrok-free.app/api', 
+    baseUrl: 'https://www.paroissesmart.com/api', 
     headers: {'Accept': 'application/json'},
   ));
 

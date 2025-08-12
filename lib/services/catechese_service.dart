@@ -10,7 +10,7 @@ import '../models/paiement_catechese.dart';
 
 class CatecheseService {
   final String token;
-  static const String baseUrl = 'https://a9cb0983460d.ngrok-free.app/api';
+  static const String baseUrl = 'https://www.paroissesmart.com/api';
 
   CatecheseService({required this.token});
 

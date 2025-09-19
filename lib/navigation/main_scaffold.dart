@@ -5,59 +5,43 @@ import '../screens/don/faire_un_don_screen.dart';
 import '../screens/demande_messe/widgets/messe_menu_screen.dart';
 import '../screens/catechese/widgets/catechese_menu_screen.dart';
 import '../services/auth_service.dart';
+import '../models/user.dart';
 
 class MainScaffold extends StatefulWidget {
   final String token;
-  final String userName;
-  final String paroisse;
-  final int paroisseId;
+  final User user;
 
-  const MainScaffold({
-    Key? key,
-    required this.token,
-    required this.userName,
-    required this.paroisse,
-    required this.paroisseId,
-  }) : super(key: key);
+  const MainScaffold({Key? key, required this.token, required this.user})
+    : super(key: key);
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  late String _userName;
-  late String _paroisse;
-  late int _paroisseId;
+  late User _currentUser;
   final AuthService _authService = AuthService();
-
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _userName = widget.userName;
-    _paroisse = widget.paroisse;
-    _paroisseId = widget.paroisseId;
-
-    // Appel non async ici, on déclenche la future sans attendre
+    _currentUser = widget.user;
     _syncUserData();
   }
 
+  /// Synchronise les données utilisateur avec l'API `/me`
   Future<void> _syncUserData() async {
-    final user = await _authService.fetchMe(widget.token);
-    if (user != null) {
-      if (user.name != _userName) {
-        setState(() => _userName = user.name);
-        await _authService.setUserName(user.name);
-      }
-      if ((user.paroisseNom ?? '') != _paroisse) {
-        setState(() => _paroisse = user.paroisseNom ?? '');
-        await _authService.setParoisseNom(user.paroisseNom ?? '');
-      }
-      if (user.paroisseId != _paroisseId) {
-        setState(() => _paroisseId = user.paroisseId);
-        await _authService.setParoisseId(user.paroisseId);
-      }
+    try {
+      final updatedUser = await _authService.fetchMe();
+      setState(() => _currentUser = updatedUser);
+
+      // Mise à jour locale (SharedPreferences)
+      await _authService.setUserName(updatedUser.name);
+      await _authService.setParoisseNom(updatedUser.paroisseNom ?? '');
+      await _authService.setParoisseId(updatedUser.paroisseId);
+    } catch (e) {
+      debugPrint("❌ Erreur lors de la synchro user : $e");
     }
   }
 
@@ -66,24 +50,29 @@ class _MainScaffoldState extends State<MainScaffold> {
     final pages = [
       HomeScreen(
         token: widget.token,
-        userName: _userName,
-        paroisse: _paroisse,
+        userName: _currentUser.name,
+        paroisse: _currentUser.paroisseNom ?? '',
+        paroisseId: _currentUser.paroisseId,
+        userId: _currentUser.id,
+        userEmail: _currentUser.email,
       ),
       FaireUnDonScreen(
         token: widget.token,
-        paroisseId: _paroisseId,
+        paroisseId: _currentUser.paroisseId,
       ),
       MesseTabScreen(
         token: widget.token,
-        userName: _userName,
-        paroisse: _paroisse,
-        paroisseId: _paroisseId,
+        userName: _currentUser.name,
+        paroisse: _currentUser.paroisseNom ?? '',
+        paroisseId: _currentUser.paroisseId,
+        userId: _currentUser.id,
+        userEmail: _currentUser.email,
       ),
       CatecheseMenuScreen(
         token: widget.token,
-        paroisseId: _paroisseId,
+        paroisseId: _currentUser.paroisseId,
       ),
-      ProfileScreen(token: widget.token),
+      ProfileScreen(token: widget.token, paroisseId: _currentUser.paroisseId),
     ];
 
     return Scaffold(
@@ -93,10 +82,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text("Paroisse Smart"),
-            Image.asset(
-              'assets/images/logo/logo1.png',
-              height: 28,
-            ),
+            Image.asset('assets/images/logo/logo1.png', height: 28),
           ],
         ),
       ),
@@ -109,7 +95,10 @@ class _MainScaffoldState extends State<MainScaffold> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.volunteer_activism), label: 'Don'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.volunteer_activism),
+            label: 'Don',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Messe'),
           BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Catéchèse'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),

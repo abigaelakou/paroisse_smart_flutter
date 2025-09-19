@@ -1,80 +1,147 @@
 import 'dart:convert';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class DemandeMesseService {
   static const String baseUrl = 'https://www.paroissesmart.com/api';
+  static const Duration timeoutDuration = Duration(seconds: 10);
 
-  /// Récupérer les types de messe selon la paroisse
- static Future<List<Map<String, dynamic>>> fetchTypesMesse(String token, int paroisseId) async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/type-messes/$paroisseId'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
+  /// Activer/désactiver les logs pour le debug
+  static bool debug = kDebugMode;
 
-  print('Status code: ${response.statusCode}');
-  print('Response body: ${response.body}');
+  // -----------------------------
+  // 📌 Types de messe
+  // -----------------------------
+  static Future<List<Map<String, dynamic>>> fetchTypesMesse(
+    String token,
+    int paroisseId,
+  ) async {
+    final uri = Uri.parse('$baseUrl/type-messes/$paroisseId');
+    try {
+      final response = await http
+          .get(uri, headers: _authHeader(token))
+          .timeout(timeoutDuration);
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    if (data['types'] == null) {
-      throw Exception("La clé 'types' est absente ou nulle dans la réponse.");
+      _logResponse('fetchTypesMesse', response);
+
+      final data = _safeJsonDecode(response.body, fallback: {});
+      if (response.statusCode == 200 && data['types'] != null) {
+        return List<Map<String, dynamic>>.from(data['types']);
+      } else {
+        throw Exception(
+          'Erreur chargement types de messe (${response.statusCode})',
+        );
+      }
+    } on TimeoutException {
+      throw Exception('Temps d’attente dépassé pour fetchTypesMesse');
+    } catch (e) {
+      throw Exception('fetchTypesMesse échoué : $e');
     }
-    return List<Map<String, dynamic>>.from(data['types']);
-  } else {
-    throw Exception('Erreur lors du chargement des types de messe (${response.statusCode})');
   }
-}
 
+  // -----------------------------
+  // 📌 Types d’intention
+  // -----------------------------
+  static Future<List<Map<String, dynamic>>> fetchTypesIntention(
+    String token,
+    int paroisseId,
+  ) async {
+    final uri = Uri.parse('$baseUrl/type-intentions/$paroisseId');
+    try {
+      final response = await http
+          .get(uri, headers: _authHeader(token))
+          .timeout(timeoutDuration);
 
-  /// Récupérer les types d’intention selon la paroisse
-  static Future<List<Map<String, dynamic>>> fetchTypesIntention(String token, int paroisseId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/type-intentions/$paroisseId'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+      _logResponse('fetchTypesIntention', response);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = _safeJsonDecode(response.body, fallback: {});
       return List<Map<String, dynamic>>.from(data['types'] ?? []);
-    } else {
-      throw Exception('Erreur lors du chargement des types d’intention');
+    } on TimeoutException {
+      throw Exception('Temps d’attente dépassé pour fetchTypesIntention');
+    } catch (e) {
+      throw Exception('fetchTypesIntention échoué : $e');
     }
   }
 
-  /// Envoyer une demande de messe (avec paiement simulé)
+  // -----------------------------
+  // 📌 Envoyer une demande
+  // -----------------------------
   static Future<Map<String, dynamic>> envoyerDemandeMesse({
     required String token,
     required Map<String, dynamic> data,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/messes'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(data),
-    );
+    final uri = Uri.parse('$baseUrl/messes');
+    try {
+      final response = await http
+          .post(
+            uri,
+            headers: _authHeader(token, json: true),
+            body: jsonEncode(data),
+          )
+          .timeout(timeoutDuration);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      print('Erreur réponse: ${response.body}');
-      throw Exception("Erreur lors de l'enregistrement de la demande de messe");
+      _logResponse('envoyerDemandeMesse', response);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return _safeJsonDecode(response.body, fallback: {});
+      } else {
+        throw Exception(
+          "Erreur enregistrement demande (${response.statusCode})",
+        );
+      }
+    } on TimeoutException {
+      throw Exception('Temps d’attente dépassé pour envoyerDemandeMesse');
+    } catch (e) {
+      throw Exception('envoyerDemandeMesse échoué : $e');
     }
   }
 
-  /// Récupérer les demandes de l’utilisateur connecté
-  static Future<List<Map<String, dynamic>>> fetchMesDemandes(String token) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/mes-demandes'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
+  // -----------------------------
+  // 📌 Mes demandes
+  // -----------------------------
+  static Future<List<Map<String, dynamic>>> fetchMesDemandes(
+    String token,
+  ) async {
+    final uri = Uri.parse('$baseUrl/mes-demandes');
+    try {
+      final response = await http
+          .get(uri, headers: _authHeader(token))
+          .timeout(timeoutDuration);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      _logResponse('fetchMesDemandes', response);
+
+      final data = _safeJsonDecode(response.body, fallback: {});
       return List<Map<String, dynamic>>.from(data['messes'] ?? []);
-    } else {
-      throw Exception("Erreur lors de la récupération des demandes");
+    } on TimeoutException {
+      throw Exception('Temps d’attente dépassé pour fetchMesDemandes');
+    } catch (e) {
+      throw Exception('fetchMesDemandes échoué : $e');
+    }
+  }
+
+  // -----------------------------
+  // 🔧 Helpers
+  // -----------------------------
+  static Map<String, String> _authHeader(String token, {bool json = false}) {
+    final headers = {'Authorization': 'Bearer $token'};
+    if (json) headers['Content-Type'] = 'application/json';
+    return headers;
+  }
+
+  static dynamic _safeJsonDecode(String source, {dynamic fallback}) {
+    try {
+      return jsonDecode(source);
+    } catch (e) {
+      if (debug) debugPrint('⚠️ Erreur JSON: $e');
+      return fallback;
+    }
+  }
+
+  static void _logResponse(String tag, http.Response response) {
+    if (debug) {
+      debugPrint('[$tag] Status code: ${response.statusCode}');
+      debugPrint('[$tag] Body: ${response.body}');
     }
   }
 }

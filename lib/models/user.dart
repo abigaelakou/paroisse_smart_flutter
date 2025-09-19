@@ -22,7 +22,9 @@ class User {
       email: json['email'] ?? '',
       contact: json['contact'] ?? '',
       paroisseId: json['paroisse_id'],
-      paroisseNom: json['paroisse'] != null ? json['paroisse']['nom_paroisse'] ?? '' : 'Non défini',
+      paroisseNom: json['paroisse'] != null
+          ? json['paroisse']['nom_paroisse'] ?? ''
+          : 'Non défini',
     );
   }
 }

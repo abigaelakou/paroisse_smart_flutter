@@ -28,7 +28,13 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
   int? _typeDonId;
   bool _anonyme = false;
 
-  final List<String> _modesPaiementLabels = ['Moov', 'Orange', 'MTN', 'Wave', 'Espèces'];
+  final List<String> _modesPaiementLabels = [
+    'Moov',
+    'Orange',
+    'MTN',
+    'Wave',
+    'Espèces',
+  ];
   final Map<String, String> _modesPaiementMap = {
     'Moov': 'moov',
     'Orange': 'orange',
@@ -49,25 +55,33 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
 
   Future<void> _loadTypesDeDon() async {
     try {
-      final types = await DonService.fetchTypesDon(widget.token, widget.paroisseId);
+      final types = await DonService.fetchTypesDon(
+        widget.token,
+        widget.paroisseId,
+      );
       setState(() {
         _typesDon = types;
         _isInitLoading = false;
       });
     } catch (e) {
       setState(() => _isInitLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur chargement types de don : $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur chargement types de don : $e")),
+        );
+      }
     }
   }
 
   Future<void> _traiterPaiementEtDon() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_modePaiement == null || !_modesPaiementMap.containsKey(_modePaiement)) {
+    if (_modePaiement == null ||
+        !_modesPaiementMap.containsKey(_modePaiement)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez choisir un mode de paiement valide.")),
+        const SnackBar(
+          content: Text("Veuillez choisir un mode de paiement valide."),
+        ),
       );
       return;
     }
@@ -135,6 +149,10 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
         _descriptionController.clear();
 
         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("✅ Don enregistré avec succès !")),
+          );
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -153,9 +171,9 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur enregistrement : $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erreur enregistrement : $e")));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -165,74 +183,102 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isInitLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-         automaticallyImplyLeading: false,
-        title: const Text("Faire un don")),
+        automaticallyImplyLeading: false,
+        title: const Text("Faire un don"),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
+              // Montant
               TextFormField(
                 controller: _montantController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: "Montant (FCFA)"),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return "Champ obligatoire";
+                  if (value == null || value.isEmpty)
+                    return "Champ obligatoire";
                   if (double.tryParse(value) == null) return "Montant invalide";
                   if (double.parse(value) <= 0) return "Montant doit être > 0";
                   return null;
                 },
               ),
               const SizedBox(height: 10),
+
+              // Mode de paiement
               DropdownButtonFormField<String>(
                 value: _modePaiement,
                 items: _modesPaiementLabels
-                    .map((mode) => DropdownMenuItem(value: mode, child: Text(mode)))
+                    .map(
+                      (mode) =>
+                          DropdownMenuItem(value: mode, child: Text(mode)),
+                    )
                     .toList(),
                 onChanged: (val) => setState(() => _modePaiement = val),
-                decoration: const InputDecoration(labelText: "Mode de paiement"),
+                decoration: const InputDecoration(
+                  labelText: "Mode de paiement",
+                ),
                 validator: (value) => value == null ? "Champ requis" : null,
               ),
               const SizedBox(height: 10),
+
+              // Type de don
               DropdownButtonFormField<int>(
                 value: _typeDonId,
                 items: _typesDon
-                    .map((type) => DropdownMenuItem(
-                          value: type["id"] as int,
-                          child: Text(type["lib_type_don"] ?? ''),
-                        ))
+                    .map(
+                      (type) => DropdownMenuItem(
+                        value: type["id"] as int,
+                        child: Text(type["lib_type_don"] ?? ''),
+                      ),
+                    )
                     .toList(),
                 onChanged: (val) => setState(() => _typeDonId = val),
                 decoration: const InputDecoration(labelText: "Type de don"),
                 validator: (value) => value == null ? "Champ requis" : null,
               ),
               const SizedBox(height: 10),
-              TextFormField(
-                controller: _contactController,
-                enabled: !_anonyme,
-                decoration: const InputDecoration(labelText: "Contact Mobile Money"),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (!_anonyme && (value == null || value.isEmpty)) {
-                    return "Champ obligatoire";
-                  }
-                  return null;
-                },
+
+              // Contact
+              Opacity(
+                opacity: _anonyme ? 0.5 : 1,
+                child: TextFormField(
+                  controller: _contactController,
+                  enabled: !_anonyme,
+                  decoration: const InputDecoration(
+                    labelText: "Contact Mobile Money",
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (!_anonyme && (value == null || value.isEmpty)) {
+                      return "Champ obligatoire";
+                    }
+                    if (!_anonyme && value!.length < 8) {
+                      return "Numéro trop court";
+                    }
+                    return null;
+                  },
+                ),
               ),
               const SizedBox(height: 10),
+
+              // Description
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: "Description (facultatif)"),
+                decoration: const InputDecoration(
+                  labelText: "Description (facultatif)",
+                ),
               ),
+
+              // Don anonyme
               CheckboxListTile(
                 title: const Text("Faire un don anonyme"),
                 value: _anonyme,
@@ -244,15 +290,23 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                 },
               ),
               const SizedBox(height: 20),
+
+              // Bouton d'envoi
               ElevatedButton.icon(
                 onPressed: _isLoading ? null : _traiterPaiementEtDon,
                 icon: _isLoading
                     ? const SizedBox(
-                        width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(Icons.send),
                 label: Text(_isLoading ? "Traitement..." : "Faire un don"),
               ),
+
               const SizedBox(height: 12),
+
+              // Historique des dons
               TextButton(
                 onPressed: () {
                   Navigator.push(

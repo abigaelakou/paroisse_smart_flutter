@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'routes/app_routes.dart';
 import 'services/auth_service.dart';
-import '../screens/auth/login_screen.dart';
-import '../navigation/main_scaffold.dart'; 
+import 'screens/auth/login_screen.dart';
+import 'navigation/main_scaffold.dart';
+import 'models/user.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
@@ -16,31 +17,31 @@ void main() async {
   final paroisseId = await authService.getParoisseId();
 
   if (token != null && paroisseId == null) {
-    throw Exception("L'ID de la paroisse est introuvable alors que le token existe.");
+    throw Exception(
+      "L'ID de la paroisse est introuvable alors que le token existe.",
+    );
   }
 
-  runApp(MyApp(
-    initialToken: token,
-    initialUserName: userName,
-    initialParoisseNom: paroisseNom,
-    initialParoisseId: paroisseId ?? 0, // valeur par défaut au cas où
-  ));
-}
+  /// Création d’un utilisateur minimal basé sur les données locales
+  final user = token != null
+      ? User(
+          id: 0, // valeur temporaire (sera écrasée après fetchMe)
+          name: userName,
+          email: '', // inconnu localement → sera mis à jour par fetchMe
+          paroisseId: paroisseId ?? 0,
+          paroisseNom: paroisseNom,
+        )
+      : null;
 
+  runApp(MyApp(initialToken: token, initialUser: user));
+}
 
 class MyApp extends StatelessWidget {
   final String? initialToken;
-  final String initialUserName;
-  final String initialParoisseNom;
-  final int initialParoisseId;
+  final User? initialUser;
 
-  const MyApp({
-    Key? key,
-    this.initialToken,
-    required this.initialUserName,
-    required this.initialParoisseNom,
-    required this.initialParoisseId,
-  }) : super(key: key);
+  const MyApp({Key? key, this.initialToken, this.initialUser})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -48,17 +49,10 @@ class MyApp extends StatelessWidget {
       title: 'Paroisse Smart',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.green),
-      home: initialToken != null
-          ? MainScaffold(
-              token: initialToken!,
-              userName: initialUserName,
-              paroisse: initialParoisseNom,
-              paroisseId: initialParoisseId,
-            )
+      home: initialToken != null && initialUser != null
+          ? MainScaffold(token: initialToken!, user: initialUser!)
           : const LoginScreen(),
       onGenerateRoute: AppRoutes.generateRoute,
     );
   }
 }
-
-

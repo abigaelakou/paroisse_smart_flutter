@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Champ de sélection pour le type de messe
+/// ------------------ Type de messe ------------------
 class TypeMesseDropdown extends StatelessWidget {
   final List<Map<String, dynamic>> types;
   final int? value;
@@ -17,12 +17,17 @@ class TypeMesseDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<int>(
       value: value,
-      decoration: const InputDecoration(labelText: "Type de messe"),
+      decoration: const InputDecoration(
+        labelText: "Type de messe",
+        border: OutlineInputBorder(),
+      ),
       items: types
-          .map((e) => DropdownMenuItem<int>(
-                value: e['id'],
-                child: Text(e['lib_type_messe']),
-              ))
+          .map(
+            (e) => DropdownMenuItem<int>(
+              value: e['id'],
+              child: Text(e['lib_type_messe']),
+            ),
+          )
           .toList(),
       onChanged: onChanged,
       validator: (val) => val == null ? "Champ requis" : null,
@@ -30,7 +35,7 @@ class TypeMesseDropdown extends StatelessWidget {
   }
 }
 
-/// Champ de sélection pour le type d’intention
+/// ------------------ Type d’intention ------------------
 class TypeIntentionDropdown extends StatelessWidget {
   final List<Map<String, dynamic>> types;
   final int? value;
@@ -47,12 +52,17 @@ class TypeIntentionDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<int>(
       value: value,
-      decoration: const InputDecoration(labelText: "Type d’intention"),
+      decoration: const InputDecoration(
+        labelText: "Type d’intention",
+        border: OutlineInputBorder(),
+      ),
       items: types
-          .map((e) => DropdownMenuItem<int>(
-                value: e['id'],
-                child: Text(e['lib_type_intention']),
-              ))
+          .map(
+            (e) => DropdownMenuItem<int>(
+              value: e['id'],
+              child: Text(e['lib_type_intention']),
+            ),
+          )
           .toList(),
       onChanged: onChanged,
       validator: (val) => val == null ? "Champ requis" : null,
@@ -60,8 +70,8 @@ class TypeIntentionDropdown extends StatelessWidget {
   }
 }
 
-/// Sélecteur de date
-class DateMessePicker extends StatelessWidget {
+/// ------------------ Date de la messe ------------------
+class DateMessePicker extends StatefulWidget {
   final DateTime? date;
   final ValueChanged<DateTime> onDateSelected;
 
@@ -72,73 +82,106 @@ class DateMessePicker extends StatelessWidget {
   });
 
   @override
+  State<DateMessePicker> createState() => _DateMessePickerState();
+}
+
+class _DateMessePickerState extends State<DateMessePicker> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.date != null
+          ? widget.date!.toIso8601String().split('T')[0]
+          : '',
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant DateMessePicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.text = widget.date != null
+        ? widget.date!.toIso8601String().split('T')[0]
+        : '';
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextFormField(
+      controller: _controller,
       readOnly: true,
-      decoration: const InputDecoration(labelText: "Date messe"),
-      controller: TextEditingController(
-        text: date != null ? date!.toIso8601String().split('T')[0] : '',
+      decoration: const InputDecoration(
+        labelText: "Date de la messe",
+        border: OutlineInputBorder(),
       ),
-      validator: (val) => date == null ? "Champ requis" : null,
+      validator: (val) => widget.date == null ? "Champ requis" : null,
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
-          initialDate: DateTime.now().add(const Duration(days: 1)),
+          initialDate:
+              widget.date ?? DateTime.now().add(const Duration(days: 1)),
           firstDate: DateTime.now(),
           lastDate: DateTime(2100),
         );
-        if (picked != null) {
-          onDateSelected(picked);
+        if (picked != null && mounted) {
+          widget.onDateSelected(picked);
         }
       },
     );
   }
 }
 
-/// Champ pour l'heure de la messe
+/// ------------------ Heure de la messe ------------------
 class HeureMesseField extends StatelessWidget {
-  final void Function(TimeOfDay?) onChanged;
   final TimeOfDay? selectedTime;
+  final ValueChanged<TimeOfDay?> onChanged;
 
-const HeureMesseField({
-  super.key,
-  required this.onChanged,
-  this.selectedTime,
-});
+  const HeureMesseField({
+    super.key,
+    this.selectedTime,
+    required this.onChanged,
+  });
 
-@override
-Widget build(BuildContext context) {
-  return InkWell(
-    onTap: () async {
-      final pickedTime = await showTimePicker(
-        context: context,
-        initialTime: selectedTime ?? TimeOfDay.now(),
-      );
-      if (pickedTime != null) {
-        onChanged(pickedTime);
-      }
-    },
-    child: InputDecorator(
-      decoration: const InputDecoration(
-        labelText: 'Heure de la messe',
-        border: OutlineInputBorder(),
-      ),
-      child: Text(
-        selectedTime != null
-            ? selectedTime!.format(context)
-            : 'Appuyez pour choisir l\'heure',
-        style: TextStyle(
-          color: selectedTime != null ? Colors.black : Colors.grey,
+  bool? get mounted => null;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: selectedTime ?? TimeOfDay.now(),
+        );
+        if (picked != null && mounted!) {
+          onChanged(picked);
+        }
+      },
+      child: InputDecorator(
+        decoration: const InputDecoration(
+          labelText: "Heure de la messe",
+          border: OutlineInputBorder(),
+        ),
+        child: Text(
+          selectedTime != null
+              ? selectedTime!.format(context)
+              : "Appuyez pour choisir l'heure",
+          style: TextStyle(
+            color: selectedTime != null ? Colors.black : Colors.grey[600],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-}
-
-
-/// Champ pour le lieu de la messe
+/// ------------------ Lieu de la messe ------------------
 class LieuMesseField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -148,13 +191,16 @@ class LieuMesseField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      decoration: const InputDecoration(labelText: "Lieu de la messe"),
+      decoration: const InputDecoration(
+        labelText: "Lieu de la messe",
+        border: OutlineInputBorder(),
+      ),
       validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
     );
   }
 }
 
-/// Champ pour les intentions
+/// ------------------ Intentions ------------------
 class IntentionsField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -165,13 +211,16 @@ class IntentionsField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       maxLines: 3,
-      decoration: const InputDecoration(labelText: "Intentions"),
+      decoration: const InputDecoration(
+        labelText: "Intentions",
+        border: OutlineInputBorder(),
+      ),
       validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
     );
   }
 }
 
-/// Dropdown pour le mode de paiement
+/// ------------------ Mode de paiement ------------------
 class ModePaiementDropdown extends StatelessWidget {
   final List<String> modes;
   final String? selectedMode;
@@ -188,12 +237,12 @@ class ModePaiementDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       value: selectedMode,
-      decoration: const InputDecoration(labelText: "Mode de paiement"),
+      decoration: const InputDecoration(
+        labelText: "Mode de paiement",
+        border: OutlineInputBorder(),
+      ),
       items: modes
-          .map((mode) => DropdownMenuItem<String>(
-                value: mode,
-                child: Text(mode),
-              ))
+          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
           .toList(),
       onChanged: onChanged,
       validator: (val) => val == null ? "Champ requis" : null,
@@ -201,7 +250,7 @@ class ModePaiementDropdown extends StatelessWidget {
   }
 }
 
-/// Champ pour le montant
+/// ------------------ Montant ------------------
 class MontantField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -212,7 +261,10 @@ class MontantField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.number,
-      decoration: const InputDecoration(labelText: "Montant (FCFA)"),
+      decoration: const InputDecoration(
+        labelText: "Montant (FCFA)",
+        border: OutlineInputBorder(),
+      ),
       validator: (val) {
         if (val == null || val.isEmpty) return "Champ requis";
         final parsed = double.tryParse(val);
@@ -223,7 +275,7 @@ class MontantField extends StatelessWidget {
   }
 }
 
-/// Champ pour le numéro mobile money
+/// ------------------ Numéro Mobile Money ------------------
 class ContactField extends StatelessWidget {
   final TextEditingController controller;
 
@@ -234,7 +286,10 @@ class ContactField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.phone,
-      decoration: const InputDecoration(labelText: "Numéro Mobile Money"),
+      decoration: const InputDecoration(
+        labelText: "Numéro Mobile Money",
+        border: OutlineInputBorder(),
+      ),
       validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
     );
   }

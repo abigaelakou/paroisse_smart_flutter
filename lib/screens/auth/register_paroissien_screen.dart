@@ -1,13 +1,15 @@
+// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import '../../services/paroisse_service.dart';
 import '../../services/auth_service.dart';
-import 'package:dropdown_search/dropdown_search.dart';
 
 class RegisterParoissienScreen extends StatefulWidget {
   const RegisterParoissienScreen({Key? key}) : super(key: key);
 
   @override
-  State<RegisterParoissienScreen> createState() => _RegisterParoissienScreenState();
+  State<RegisterParoissienScreen> createState() =>
+      _RegisterParoissienScreenState();
 }
 
 class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
@@ -18,6 +20,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   final _dateNaissController = TextEditingController();
+
   String? _selectedSexe;
   String? _selectedSituation;
   List<String> _sacrementsRecus = [];
@@ -38,9 +41,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
   Future<void> _loadParoisses() async {
     try {
       final paroisses = await _paroisseService.fetchParoissesActives();
-      setState(() {
-        _paroisses = paroisses;
-      });
+      setState(() => _paroisses = paroisses);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erreur chargement paroisses: $e')),
@@ -53,6 +54,16 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
     if (_selectedParoisse == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez sélectionner une paroisse')),
+      );
+      return;
+    }
+
+    // Validation sacrements
+    if (_sacrementsRecus.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez sélectionner au moins un sacrement'),
+        ),
       );
       return;
     }
@@ -75,20 +86,22 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Inscription réussie ! Veuillez vous connecter.')),
+          const SnackBar(
+            content: Text('Inscription réussie ! Veuillez vous connecter.'),
+          ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context); // Retour vers login
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erreur lors de l\'inscription')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -120,47 +133,50 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
               : Form(
                   key: _formKey,
                   child: ListView(
-                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     children: [
-                      Column(
-                        children: [
-                          Center(
-                            child: Image.asset(
-                              'assets/images/logo/logo1.png',
-                              height: 100,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Paroisse Smart',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Image.asset(
+                          'assets/images/logo/logo1.png',
+                          height: 100,
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Paroisse Smart',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
                       // Nom complet
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(labelText: 'Nom complet'),
-                        validator: (value) =>
-                            value == null || value.isEmpty ? 'Veuillez entrer votre nom' : null,
+                        decoration: const InputDecoration(
+                          labelText: 'Nom complet',
+                        ),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Veuillez entrer votre nom'
+                            : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Email
                       TextFormField(
                         controller: _emailController,
-                        decoration: const InputDecoration(labelText: 'Email'),
                         keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'Email'),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Veuillez entrer votre email';
+                          if (value == null || value.isEmpty)
+                            return 'Veuillez entrer votre email';
                           final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                          if (!emailRegex.hasMatch(value)) return 'Email invalide';
+                          if (!emailRegex.hasMatch(value))
+                            return 'Email invalide';
                           return null;
                         },
                       ),
@@ -169,11 +185,13 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       // Contact
                       TextFormField(
                         controller: _contactController,
-                        decoration: const InputDecoration(labelText: 'Contact'),
                         keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(labelText: 'Contact'),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Veuillez entrer votre contact';
-                          if (!RegExp(r'^\d{8,15}$').hasMatch(value)) return 'Contact invalide';
+                          if (value == null || value.isEmpty)
+                            return 'Veuillez entrer votre contact';
+                          if (!RegExp(r'^\d{8,15}$').hasMatch(value))
+                            return 'Contact invalide';
                           return null;
                         },
                       ),
@@ -184,31 +202,52 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         decoration: const InputDecoration(labelText: 'Sexe'),
                         value: _selectedSexe,
                         items: ['Masculin', 'Féminin']
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
                             .toList(),
-                        onChanged: (value) => setState(() => _selectedSexe = value),
-                        validator: (value) => value == null ? 'Veuillez sélectionner le sexe' : null,
+                        onChanged: (value) =>
+                            setState(() => _selectedSexe = value),
+                        validator: (value) => value == null
+                            ? 'Veuillez sélectionner le sexe'
+                            : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Situation matrimoniale
                       DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(labelText: 'Situation matrimoniale'),
+                        decoration: const InputDecoration(
+                          labelText: 'Situation matrimoniale',
+                        ),
                         value: _selectedSituation,
-                        items: ['Célibataire', 'Marié(e)', 'Veuf(ve)', 'Divorcé(e)']
-                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                            .toList(),
-                        onChanged: (value) => setState(() => _selectedSituation = value),
-                        validator: (value) =>
-                            value == null ? 'Veuillez sélectionner la situation matrimoniale' : null,
+                        items:
+                            [
+                                  'Célibataire',
+                                  'Marié(e)',
+                                  'Veuf(ve)',
+                                  'Divorcé(e)',
+                                ]
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s,
+                                    child: Text(s),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) =>
+                            setState(() => _selectedSituation = value),
+                        validator: (value) => value == null
+                            ? 'Veuillez sélectionner la situation matrimoniale'
+                            : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Date de naissance
                       TextFormField(
                         controller: _dateNaissController,
-                        decoration:
-                            const InputDecoration(labelText: 'Date de naissance (YYYY-MM-DD)'),
+                        decoration: const InputDecoration(
+                          labelText: 'Date de naissance (YYYY-MM-DD)',
+                        ),
                         readOnly: true,
                         onTap: () async {
                           FocusScope.of(context).requestFocus(FocusNode());
@@ -219,69 +258,48 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                             lastDate: DateTime.now(),
                           );
                           if (date != null) {
-                            _dateNaissController.text = date.toIso8601String().substring(0, 10);
+                            _dateNaissController.text = date
+                                .toIso8601String()
+                                .substring(0, 10);
                           }
                         },
-                        validator: (value) =>
-                            value == null || value.isEmpty ? 'Date de naissance requise' : null,
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Date de naissance requise'
+                            : null,
                       ),
                       const SizedBox(height: 16),
 
-                      // Sacrements reçus
+                      // Sacrements
                       InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Sacrements reçus'),
+                        decoration: const InputDecoration(
+                          labelText: 'Sacrements reçus',
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CheckboxListTile(
-                              value: _sacrementsRecus.contains('Baptême'),
-                              onChanged: (val) => setState(() {
-                                if (val == true) {
-                                  _sacrementsRecus.add('Baptême');
-                                } else {
-                                  _sacrementsRecus.remove('Baptême');
-                                }
-                              }),
-                              title: const Text('Baptême'),
-                              controlAffinity: ListTileControlAffinity.leading,
-                            ),
-                            CheckboxListTile(
-                              value: _sacrementsRecus.contains('Confirmation'),
-                              onChanged: (val) => setState(() {
-                                if (val == true) {
-                                  _sacrementsRecus.add('Confirmation');
-                                } else {
-                                  _sacrementsRecus.remove('Confirmation');
-                                }
-                              }),
-                              title: const Text('Confirmation'),
-                              controlAffinity: ListTileControlAffinity.leading,
-                            ),
-                            CheckboxListTile(
-                              value: _sacrementsRecus.contains('Mariage'),
-                              onChanged: (val) => setState(() {
-                                if (val == true) {
-                                  _sacrementsRecus.add('Mariage');
-                                } else {
-                                  _sacrementsRecus.remove('Mariage');
-                                }
-                              }),
-                              title: const Text('Mariage'),
-                              controlAffinity: ListTileControlAffinity.leading,
-                            ),
-                            CheckboxListTile(
-                              value: _sacrementsRecus.contains('Aucun'),
-                              onChanged: (val) => setState(() {
-                                if (val == true) {
-                                  _sacrementsRecus.add('Aucun');
-                                } else {
-                                  _sacrementsRecus.remove('Aucun');
-                                }
-                              }),
-                              title: const Text('Aucun'),
-                              controlAffinity: ListTileControlAffinity.leading,
-                            ),
-                          ],
+                          children:
+                              ['Baptême', 'Confirmation', 'Mariage', 'Aucun']
+                                  .map(
+                                    (s) => CheckboxListTile(
+                                      value: _sacrementsRecus.contains(s),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          if (val == true) {
+                                            if (s == 'Aucun')
+                                              _sacrementsRecus.clear();
+                                            _sacrementsRecus.add(s);
+                                            if (s != 'Aucun')
+                                              _sacrementsRecus.remove('Aucun');
+                                          } else {
+                                            _sacrementsRecus.remove(s);
+                                          }
+                                        });
+                                      },
+                                      title: Text(s),
+                                      controlAffinity:
+                                          ListTileControlAffinity.leading,
+                                    ),
+                                  )
+                                  .toList(),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -291,17 +309,17 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         items: _paroisses,
                         selectedItem: _selectedParoisse,
                         itemAsString: (paroisse) => paroisse.nom,
-                        onChanged: (paroisse) {
-                          setState(() => _selectedParoisse = paroisse);
-                        },
+                        onChanged: (paroisse) =>
+                            setState(() => _selectedParoisse = paroisse),
                         dropdownDecoratorProps: const DropDownDecoratorProps(
                           dropdownSearchDecoration: InputDecoration(
                             labelText: 'Paroisse',
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        validator: (value) =>
-                            value == null ? 'Veuillez sélectionner une paroisse' : null,
+                        validator: (value) => value == null
+                            ? 'Veuillez sélectionner une paroisse'
+                            : null,
                         popupProps: const PopupProps.menu(
                           showSearchBox: true,
                           searchFieldProps: TextFieldProps(
@@ -316,28 +334,26 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       // Mot de passe
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Mot de passe'),
+                        decoration: const InputDecoration(
+                          labelText: 'Mot de passe',
+                        ),
                         obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.length < 8) {
-                            return 'Mot de passe trop court';
-                          }
-                          return null;
-                        },
+                        validator: (value) => value != null && value.length >= 8
+                            ? null
+                            : 'Mot de passe trop court',
                       ),
                       const SizedBox(height: 16),
 
                       // Confirmation mot de passe
                       TextFormField(
                         controller: _passwordConfirmController,
-                        decoration: const InputDecoration(labelText: 'Confirmer mot de passe'),
+                        decoration: const InputDecoration(
+                          labelText: 'Confirmer mot de passe',
+                        ),
                         obscureText: true,
-                        validator: (value) {
-                          if (value != _passwordController.text) {
-                            return 'Les mots de passe ne correspondent pas';
-                          }
-                          return null;
-                        },
+                        validator: (value) => value == _passwordController.text
+                            ? null
+                            : 'Les mots de passe ne correspondent pas',
                       ),
                       const SizedBox(height: 32),
 

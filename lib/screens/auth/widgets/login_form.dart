@@ -7,69 +7,80 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _loading = false;
 
- Future<void> _handleLogin() async {
-  setState(() => _loading = true);
-  final result = await AuthService().login(
-    _emailController.text.trim(),
-    _passwordController.text.trim(),
-  );
-  setState(() => _loading = false);
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  if (result != null) {
-    final user = result['user'];
-    final token = result['token'];
+    setState(() => _loading = true);
+    try {
+      final user = await AuthService().login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-    // Pour l'instant, on affiche les infos à l'écran :
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Connecté'),
-        content: Text('Bienvenue ${user['name']} 👋\nEmail: ${user['email']}'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-            child: Text('Continuer'),
-          ),
-        ],
-      ),
-    );
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Email ou mot de passe incorrect')),
-    );
+      if (user != null) {
+        // Redirection vers l'écran Home
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text("Connexion", style: Theme.of(context).textTheme.headlineMedium),
-        SizedBox(height: 16),
-        TextField(
-          controller: _emailController,
-          decoration: InputDecoration(labelText: 'Email'),
-        ),
-        SizedBox(height: 12),
-        TextField(
-          controller: _passwordController,
-          obscureText: true,
-          decoration: InputDecoration(labelText: 'Mot de passe'),
-        ),
-        SizedBox(height: 20),
-        ElevatedButton(
-          onPressed: _loading ? null : _handleLogin,
-          child: _loading
-              ? CircularProgressIndicator(color: Colors.white)
-              : Text('Se connecter'),
-        )
-      ],
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text("Connexion", style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(labelText: 'Email'),
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) => value == null || value.isEmpty
+                ? 'Veuillez entrer votre email'
+                : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: 'Mot de passe'),
+            validator: (value) => value == null || value.isEmpty
+                ? 'Veuillez entrer votre mot de passe'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _loading ? null : _handleLogin,
+            child: _loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text('Se connecter'),
+          ),
+        ],
+      ),
     );
   }
 }

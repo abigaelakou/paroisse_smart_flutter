@@ -1,25 +1,37 @@
+// models/evenement.dart
 class Evenement {
   final int id;
-  final String lib_evenement;
+  final String libelle;
   final String description;
-  final String date_evement;
-  final String heure_evenement;
+  final DateTime dateEvenement;
+  final String heureEvenement;
 
   Evenement({
     required this.id,
-    required this.lib_evenement,
+    required this.libelle,
     required this.description,
-    required this.date_evement,
-    required this.heure_evenement,
+    required this.dateEvenement,
+    required this.heureEvenement,
   });
 
   factory Evenement.fromJson(Map<String, dynamic> json) {
     return Evenement(
-      id: json['id'],
-      lib_evenement: json['lib_evenement'],
-      description: json['description'],
-      date_evement: json['date_evement'],
-      heure_evenement: json['heure_evenement'],
+      id: json['id'] ?? 0,
+      libelle: json['lib_evenement'] ?? '',
+      description: json['description'] ?? '',
+      dateEvenement:
+          DateTime.tryParse(json['date_evement'] ?? '') ?? DateTime.now(),
+      heureEvenement: json['heure_evenement'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'lib_evenement': libelle,
+      'description': description,
+      'date_evement': dateEvenement.toIso8601String(),
+      'heure_evenement': heureEvenement,
+    };
   }
 }

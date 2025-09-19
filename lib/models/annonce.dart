@@ -1,8 +1,9 @@
+// models/annonce.dart
 class Annonce {
   final int id;
   final String titre;
   final String contenu;
-  final String createdAt;
+  final DateTime createdAt;
 
   Annonce({
     required this.id,
@@ -13,10 +14,19 @@ class Annonce {
 
   factory Annonce.fromJson(Map<String, dynamic> json) {
     return Annonce(
-      id: json['id'],
-      titre: json['titre'],
-      contenu: json['contenu'],
-      createdAt: json['created_at'],
+      id: json['id'] ?? 0,
+      titre: json['titre'] ?? '',
+      contenu: json['contenu'] ?? '',
+      createdAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'titre': titre,
+      'contenu': contenu,
+      'created_at': createdAt.toIso8601String(),
+    };
   }
 }

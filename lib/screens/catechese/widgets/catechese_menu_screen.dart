@@ -15,59 +15,80 @@ class CatecheseMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView(
+      appBar: AppBar(
+        title: const Text("Catéchèse"),
+        centerTitle: true,
+        backgroundColor: Colors.green[700],
+      ),
+      body: Padding(
         padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 20),
-          const Text(
-            "Catéchèse",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 30),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 20),
 
-          // 🔘 Bouton - Faire une inscription
-          ElevatedButton.icon(
-            icon: const Icon(Icons.app_registration),
-            label: const Text("Faire une inscription"),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => InscriptionCatecheseScreen(
-                    token: token,
-                    paroisseId: paroisseId,
+            // 🔘 Bouton - Faire une inscription
+            _buildMenuButton(
+              context,
+              icon: Icons.app_registration,
+              label: "Faire une inscription",
+              color: Colors.green[700]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InscriptionCatecheseScreen(
+                      token: token,
+                      paroisseId: paroisseId,
+                    ),
                   ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.green[700],
-              foregroundColor: Colors.white,
+                );
+              },
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
 
-          // 🔘 Bouton - Mes paiements
-          ElevatedButton.icon(
-            icon: const Icon(Icons.receipt_long),
-            label: const Text("Mes paiements"),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ListePaiementsCatecheseScreen(token: token),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: Colors.orange[700],
-              foregroundColor: Colors.white,
+            // 🔘 Bouton - Mes paiements
+            _buildMenuButton(
+              context,
+              icon: Icons.receipt_long,
+              label: "Mes paiements",
+              color: Colors.orange[700]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ListePaiementsCatecheseScreen(token: token),
+                  ),
+                );
+              },
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🔧 Widget réutilisable pour éviter la répétition du code
+  Widget _buildMenuButton(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return ElevatedButton.icon(
+      icon: Icon(icon, size: 26),
+      label: Text(
+        label,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+      ),
+      onPressed: onTap,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
       ),
     );
   }

@@ -1,7 +1,6 @@
-import 'dart:convert';
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
@@ -11,36 +10,48 @@ class AuthService {
   static const _userNameKey = 'user_name';
   static const _paroisseNomKey = 'paroisse_nom';
   static const _paroisseIdKey = 'paroisse_id';
+  static const Duration timeoutDuration = Duration(seconds: 10);
 
-  final Dio _dio = Dio(BaseOptions(
-    baseUrl: _baseUrl,
-    headers: {'Accept': 'application/json'},
-  ));
+  final Dio _dio;
 
-  // ---------------- AUTH ---------------- //
+  AuthService()
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: _baseUrl,
+          headers: {'Accept': 'application/json'},
+          receiveTimeout: timeoutDuration,
+          connectTimeout: timeoutDuration,
+        ),
+      );
+  static bool debug = kDebugMode;
 
-  Future<Map<String, dynamic>?> login(String email, String password) async {
+  // ---------------- LOGIN ---------------- //
+  Future<User> login(String email, String password) async {
     try {
-      final response = await _dio.post('/login', data: {
-        'email': email,
-        'password': password,
-      });
+      final response = await _dio.post(
+        '/login',
+        data: {'email': email, 'password': password},
+      );
+
+      _logResponse('login', response);
 
       if (response.data['status'] == true) {
         final token = response.data['token'];
         final user = User.fromJson(response.data['user']);
-
         await saveToken(token);
         await saveUserData(user);
-
-        return {'token': token, 'user': user};
+        return user;
+      } else {
+        throw response.data['message'] ?? 'Erreur inconnue';
       }
+    } on DioException catch (e) {
+      throw 'Erreur login : ${e.response?.data['message'] ?? e.message}';
     } catch (e) {
-      debugPrint('Erreur login: $e');
+      throw 'Erreur inattendue login : $e';
     }
-    return null;
   }
 
+  // ---------------- REGISTER ---------------- //
   Future<bool> registerParoissien({
     required String name,
     required String email,
@@ -54,21 +65,26 @@ class AuthService {
     required List<String> sacrementsRecus,
   }) async {
     try {
-      final response = await _dio.post('/auth/register-paroissien', data: {
-        'name': name,
-        'email': email,
-        'contact': contact,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-        'paroisse_id': paroisseId,
-        'sexe': sexe,
-        'situation_matrimoniale': situationMatrimoniale,
-        'date_naiss': dateNaiss,
-        'sacrement_recu': sacrementsRecus,
-      });
+      final response = await _dio.post(
+        '/auth/register-paroissien',
+        data: {
+          'name': name,
+          'email': email,
+          'contact': contact,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+          'paroisse_id': paroisseId,
+          'sexe': sexe,
+          'situation_matrimoniale': situationMatrimoniale,
+          'date_naiss': dateNaiss,
+          'sacrement_recu': sacrementsRecus,
+        },
+      );
+
+      _logResponse('registerParoissien', response);
 
       return response.data['status'] == true;
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       if (e.response?.statusCode == 409) {
         throw e.response?.data['message'] ?? 'Ce compte existe déjà.';
       } else if (e.response?.statusCode == 422) {
@@ -81,61 +97,30 @@ class AuthService {
     }
   }
 
-  Future<bool> checkIfUserExists({
-    required String email,
-    required String contact,
-  }) async {
-    try {
-      final response = await _dio.post('/checkUserExists', data: {
-        'email': email,
-        'contact': contact,
-      });
-      return response.data['exists'] == true;
-    } catch (e) {
-      print('Erreur vérification utilisateur existant: $e');
-      return false;
-    }
-  }
+  // ---------------- FETCH ME ---------------- //
+  Future<User> fetchMe() async {
+    final token = await getToken();
+    if (token == null) throw 'Utilisateur non connecté';
 
-  // ---------------- UTILISATEUR ---------------- //
-
-  Future<User?> fetchMe(String token) async {
     try {
       final response = await _dio.get(
         '/me',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(headers: _authHeader(token)),
       );
 
-      if (response.statusCode == 200) {
-        final user = User.fromJson(response.data['user']);
-        await saveUserData(user);
-        return user;
-      }
-    } catch (e) {
-      debugPrint('Erreur fetchMe: $e');
-    }
-    return null;
-  }
+      _logResponse('fetchMe', response);
 
-  Future<void> refreshUserData(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/me'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final user = User.fromJson(data['user']);
-        await saveUserData(user);
-      }
+      final user = User.fromJson(response.data['user']);
+      await saveUserData(user);
+      return user;
+    } on DioException catch (e) {
+      throw 'Erreur fetchMe : ${e.response?.data['message'] ?? e.message}';
     } catch (e) {
-      debugPrint('Erreur refreshUserData: $e');
+      throw 'Erreur inattendue fetchMe : $e';
     }
   }
 
   // ---------------- SHARED PREFERENCES ---------------- //
-
   Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
@@ -150,38 +135,17 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userNameKey, user.name);
     await prefs.setString(_paroisseNomKey, user.paroisseNom ?? '');
-    await prefs.setInt(_paroisseIdKey, user.paroisseId ?? 0);
+    await prefs.setInt(_paroisseIdKey, user.paroisseId);
   }
 
-  Future<String?> getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userNameKey);
-  }
+  Future<String?> getUserName() async =>
+      (await SharedPreferences.getInstance()).getString(_userNameKey);
 
-  Future<String?> getParoisseNom() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_paroisseNomKey);
-  }
+  Future<String?> getParoisseNom() async =>
+      (await SharedPreferences.getInstance()).getString(_paroisseNomKey);
 
-  Future<int?> getParoisseId() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_paroisseIdKey);
-  }
-
-  Future<void> setUserName(String name) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userNameKey, name);
-  }
-
-  Future<void> setParoisseNom(String paroisseNom) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_paroisseNomKey, paroisseNom);
-  }
-
-  Future<void> setParoisseId(int paroisseId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_paroisseIdKey, paroisseId);
-  }
+  Future<int?> getParoisseId() async =>
+      (await SharedPreferences.getInstance()).getInt(_paroisseIdKey);
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
@@ -189,5 +153,32 @@ class AuthService {
     await prefs.remove(_userNameKey);
     await prefs.remove(_paroisseNomKey);
     await prefs.remove(_paroisseIdKey);
+  }
+
+  Future<void> setUserName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userName', name);
+  }
+
+  Future<void> setParoisseNom(String nom) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('paroisse', nom);
+  }
+
+  Future<void> setParoisseId(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('paroisseId', id);
+  }
+
+  // ---------------- HELPERS ---------------- //
+  Map<String, String> _authHeader(String token) => {
+    'Authorization': 'Bearer $token',
+  };
+
+  void _logResponse(String tag, Response response) {
+    if (debug) {
+      debugPrint('[$tag] Status: ${response.statusCode}');
+      debugPrint('[$tag] Body: ${response.data}');
+    }
   }
 }

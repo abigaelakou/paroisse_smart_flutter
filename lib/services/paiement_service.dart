@@ -1,31 +1,33 @@
-
+import 'package:flutter/foundation.dart';
 
 class PaiementService {
+  /// Simule un paiement pour tests
   static Future<Map<String, dynamic>> simulerPaiement({
     required String operateur,
     required String numero,
     required double montant,
   }) async {
-    print("📞 [SIMULATION] Paiement en cours...");
-    print("Opérateur: $operateur | Numéro: $numero | Montant: $montant");
-
-    await Future.delayed(const Duration(seconds: 1)); // Simulation d'attente réseau
-
-    if (numero.isEmpty || numero.length < 8) {
-      print("❌ Numéro invalide");
-      return {
-        'success': false,
-        'message': "Numéro invalide pour $operateur",
-      };
+    if (kDebugMode) {
+      debugPrint("📞 [SIMULATION] Paiement en cours...");
+      debugPrint("Opérateur: $operateur | Numéro: $numero | Montant: $montant");
     }
 
-    final transactionId = "TXN_${DateTime.now().millisecondsSinceEpoch}_${operateur.toUpperCase()}";
+    // Simulation d'attente réseau
+    await Future.delayed(const Duration(seconds: 1));
 
-    print("✅ Paiement simulé avec succès : $transactionId");
+    // Validation simple du numéro
+    if (numero.isEmpty || numero.length < 8) {
+      if (kDebugMode) debugPrint("❌ Numéro invalide");
+      return {'success': false, 'message': "Numéro invalide pour $operateur"};
+    }
 
-    return {
-      'success': true,
-      'transaction_id': transactionId,
-    };
+    final transactionId =
+        "TXN_${DateTime.now().millisecondsSinceEpoch}_${operateur.toUpperCase()}";
+
+    if (kDebugMode) {
+      debugPrint("✅ Paiement simulé avec succès : $transactionId");
+    }
+
+    return {'success': true, 'transaction_id': transactionId};
   }
 }

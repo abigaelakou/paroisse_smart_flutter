@@ -14,11 +14,24 @@ class ProfileInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.green),
-      title: Text(title),
-      subtitle: Text(value),
-      contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 1.5,
+      child: ListTile(
+        leading: Icon(icon, color: Colors.green, size: 28),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          value,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+          overflow: TextOverflow.ellipsis,
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      ),
     );
   }
 }

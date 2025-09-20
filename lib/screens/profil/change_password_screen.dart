@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-
 import '../../services/profile_service.dart';
-
+import 'package:dio/dio.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   final String token;
-
   const ChangePasswordScreen({super.key, required this.token});
 
   @override
@@ -18,7 +15,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-
   late final ProfileService _profileService;
   bool _isLoading = false;
 
@@ -26,43 +22,45 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   void initState() {
     super.initState();
     _profileService = ProfileService(
-      Dio(BaseOptions(
-        baseUrl: 'https://www.paroissesmart.com/api',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
-        },
-      )),
+      Dio(
+        BaseOptions(
+          baseUrl: 'https://www.paroissesmart.com/api',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ${widget.token}',
+          },
+        ),
+      ),
     );
   }
 
-Future<void> _submit() async {
-  if (!_formKey.currentState!.validate()) return;
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
-  setState(() => _isLoading = true);
-
-  final message = await _profileService.changePassword(
-  currentPassword: _currentPasswordController.text,
-  newPassword: _newPasswordController.text,
-  newPasswordConfirmation: _confirmPasswordController.text,
-);
-
-
-  setState(() => _isLoading = false);
-
-  if (message != null && message.contains("succès")) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+    final message = await _profileService.changePassword(
+      currentPassword: _currentPasswordController.text,
+      newPassword: _newPasswordController.text,
+      newPasswordConfirmation: _confirmPasswordController.text,
     );
-    // ✅ Redirection vers l’écran de connexion après succès
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false, arguments: 'Mot de passe modifié avec succès');
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? "Erreur inconnue")),
-    );
+
+    setState(() => _isLoading = false);
+
+    if (message != null && message.contains("succès")) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/login',
+        (_) => false,
+        arguments: 'Mot de passe modifié avec succès',
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
-}
-
 
   @override
   void dispose() {
@@ -75,9 +73,7 @@ Future<void> _submit() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-         automaticallyImplyLeading: false,
-        title: const Text("Changer le mot de passe")),
+      appBar: AppBar(title: const Text("Changer le mot de passe")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -91,7 +87,7 @@ Future<void> _submit() async {
                   labelText: 'Mot de passe actuel',
                 ),
                 validator: (value) =>
-                    value == null || value.isEmpty ? 'Champ requis' : null,
+                    (value?.isEmpty ?? true) ? 'Champ requis' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -101,11 +97,9 @@ Future<void> _submit() async {
                   labelText: 'Nouveau mot de passe',
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Champ requis';
-                  } else if (value.length < 6) {
-                    return 'Le mot de passe doit contenir au moins 6 caractères';
-                  }
+                  if ((value?.isEmpty ?? true)) return 'Champ requis';
+                  if ((value?.length ?? 0) < 6)
+                    return 'Mot de passe trop court';
                   return null;
                 },
               ),
@@ -117,9 +111,8 @@ Future<void> _submit() async {
                   labelText: 'Confirmer le mot de passe',
                 ),
                 validator: (value) {
-                  if (value != _newPasswordController.text) {
+                  if (value != _newPasswordController.text)
                     return 'Les mots de passe ne correspondent pas';
-                  }
                   return null;
                 },
               ),

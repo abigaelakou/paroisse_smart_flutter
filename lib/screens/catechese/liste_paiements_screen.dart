@@ -10,10 +10,12 @@ class ListePaiementsCatecheseScreen extends StatefulWidget {
   const ListePaiementsCatecheseScreen({super.key, required this.token});
 
   @override
-  State<ListePaiementsCatecheseScreen> createState() => _ListePaiementsCatecheseScreenState();
+  State<ListePaiementsCatecheseScreen> createState() =>
+      _ListePaiementsCatecheseScreenState();
 }
 
-class _ListePaiementsCatecheseScreenState extends State<ListePaiementsCatecheseScreen> {
+class _ListePaiementsCatecheseScreenState
+    extends State<ListePaiementsCatecheseScreen> {
   List<PaiementCatechese> _paiements = [];
   bool _isLoading = true;
   late final CatecheseService _service;
@@ -31,13 +33,19 @@ class _ListePaiementsCatecheseScreenState extends State<ListePaiementsCatecheseS
     setState(() => _isLoading = true);
     try {
       final result = await _service.fetchPaiements();
+      // Tri décroissant par date
+      result.sort((a, b) => b.dateInscription.compareTo(a.dateInscription));
       setState(() => _paiements = result);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur: ${e.toString()}")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erreur lors du chargement : ${e.toString()}"),
+          ),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -50,21 +58,32 @@ class _ListePaiementsCatecheseScreenState extends State<ListePaiementsCatecheseS
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadPaiements,
+            tooltip: 'Rafraîchir',
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _paiements.isEmpty
-              ? const Center(child: Text("Aucun paiement trouvé."))
-              : ListView.builder(
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _paiements.isEmpty
+            ? const Center(child: Text("Aucun paiement trouvé."))
+            : RefreshIndicator(
+                onRefresh: _loadPaiements,
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: _paiements.length,
                   itemBuilder: (context, index) {
                     final p = _paiements[index];
                     return Card(
-                      margin: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       child: ListTile(
-                        title: Text(p.nomCatechumene),
+                        title: Text(
+                          p.nomCatechumene,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Text(
                           "${p.niveau} • ${p.session}\n"
                           "Date : ${_formatter.format(p.dateInscription)}\n"
@@ -73,15 +92,22 @@ class _ListePaiementsCatecheseScreenState extends State<ListePaiementsCatecheseS
                         trailing: Chip(
                           label: Text(
                             p.statut,
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          backgroundColor: p.statut == 'Payé' ? Colors.green : Colors.orange,
+                          backgroundColor: p.statut.toLowerCase() == 'payé'
+                              ? Colors.green
+                              : Colors.orange,
                         ),
                         isThreeLine: true,
                       ),
                     );
                   },
                 ),
+              ),
+      ),
     );
   }
 }

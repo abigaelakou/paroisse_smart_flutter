@@ -3,20 +3,13 @@ import '../../../services/demande_messe_service.dart';
 import '../../../services/paiement_service.dart';
 import '../confirmation_demande_screen.dart';
 import 'form_fields.dart';
+import '../../../models/user.dart';
 
 class DemandeMesseForm extends StatefulWidget {
   final String token;
-  final int paroisseId;
-  final String userName;
-  final String paroisse;
+  final User user;
 
-  const DemandeMesseForm({
-    super.key,
-    required this.token,
-    required this.paroisseId,
-    required this.userName,
-    required this.paroisse,
-  });
+  const DemandeMesseForm({super.key, required this.token, required this.user});
 
   @override
   State<DemandeMesseForm> createState() => _DemandeMesseFormState();
@@ -24,7 +17,6 @@ class DemandeMesseForm extends StatefulWidget {
 
 class _DemandeMesseFormState extends State<DemandeMesseForm> {
   final _formKey = GlobalKey<FormState>();
-
   final TextEditingController _lieuController = TextEditingController();
   final TextEditingController _intentionsController = TextEditingController();
   final TextEditingController _montantController = TextEditingController();
@@ -42,7 +34,12 @@ class _DemandeMesseFormState extends State<DemandeMesseForm> {
   bool _isLoading = false;
 
   final _modes = ['Moov', 'Orange', 'MTN', 'Wave'];
-  final _modesMap = {'Moov': 'moov', 'Orange': 'orange', 'MTN': 'mtn', 'Wave': 'wave'};
+  final _modesMap = {
+    'Moov': 'moov',
+    'Orange': 'orange',
+    'MTN': 'mtn',
+    'Wave': 'wave',
+  };
 
   @override
   void initState() {
@@ -50,18 +47,39 @@ class _DemandeMesseFormState extends State<DemandeMesseForm> {
     _loadTypes();
   }
 
+  @override
+  void dispose() {
+    _lieuController.dispose();
+    _intentionsController.dispose();
+    _montantController.dispose();
+    _contactController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadTypes() async {
+    setState(() => _isLoading = true);
     try {
-      final typesMesse = await DemandeMesseService.fetchTypesMesse(widget.token, widget.paroisseId);
-      final typesIntention = await DemandeMesseService.fetchTypesIntention(widget.token, widget.paroisseId);
+      final typesMesse = await DemandeMesseService.fetchTypesMesse(
+        widget.token,
+        widget.user.paroisseId,
+      );
+      final typesIntention = await DemandeMesseService.fetchTypesIntention(
+        widget.token,
+        widget.user.paroisseId,
+      );
+      if (!mounted) return;
       setState(() {
         _typesMesse = typesMesse;
         _typesIntention = typesIntention;
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur chargement types : $e")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erreur chargement types : $e")));
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -72,74 +90,107 @@ class _DemandeMesseFormState extends State<DemandeMesseForm> {
   }
 
   Future<void> _soumettreDemande() async {
-    if (!_formKey.currentState!.validate() || _dateMesse == null || _moyenPaiement == null || _heureMesse == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Formulaire incomplet")));
+    if (!_formKey.currentState!.validate() ||
+        _dateMesse == null ||
+        _heureMesse == null ||
+        _moyenPaiement == null ||
+        _typeMesseId == null ||
+        _typeIntentionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Veuillez compléter tous les champs obligatoires"),
+        ),
+      );
       return;
     }
 
+    final montant = double.tryParse(_montantController.text.trim());
+    if (montant == null || montant <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Montant invalide")));
+      return;
+    }
+
+    final numero = _contactController.text.trim();
+    if (numero.isEmpty || numero.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Numéro de contact invalide")),
+      );
+      return;
+    }
+
+    final operateur = _modesMap[_moyenPaiement!]!;
     setState(() => _isLoading = true);
 
-    final montant = double.parse(_montantController.text.trim());
-    final numero = _contactController.text.trim();
-    final operateur = _modesMap[_moyenPaiement]!;
-
-    final paiement = await PaiementService.simulerPaiement(
-      operateur: operateur,
-      numero: numero,
-      montant: montant,
-    );
-
-    if (!paiement['success']) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Paiement échoué : ${paiement['message']}")));
-      return;
-    }
-
-    final data = {
-      "id_type_messe": _typeMesseId,
-      "id_type_intention": _typeIntentionId,
-      "date_messe": _dateMesse!.toIso8601String().split('T')[0],
-      "heure_messe": formatHeureToTimeString(_heureMesse!),
-      "lieu_messe": _lieuController.text.trim(),
-      "intentions": _intentionsController.text.trim(),
-      "montant": montant,
-      "moyen_paiement": operateur,
-      "contact": numero,
-      "transaction_id": paiement['transaction_id'],
-    };
-
     try {
-      final response = await DemandeMesseService.envoyerDemandeMesse(token: widget.token, data: data);
+      final paiement = await PaiementService.simulerPaiement(
+        operateur: operateur,
+        numero: numero,
+        montant: montant,
+      );
+
+      if (!paiement['success']) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Paiement échoué : ${paiement['message']}")),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final data = {
+        "id_type_messe": _typeMesseId,
+        "id_type_intention": _typeIntentionId,
+        "date_messe": _dateMesse!.toIso8601String().split('T')[0],
+        "heure_messe": formatHeureToTimeString(_heureMesse!),
+        "lieu_messe": _lieuController.text.trim(),
+        "intentions": _intentionsController.text.trim(),
+        "montant": montant,
+        "moyen_paiement": operateur,
+        "contact": numero,
+        "transaction_id": paiement['transaction_id'],
+      };
+
+      final response = await DemandeMesseService.envoyerDemandeMesse(
+        token: widget.token,
+        data: data,
+      );
+
+      if (!mounted) return;
+
       if (response['status'] == true) {
-        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => ConfirmationDemandeScreen(
-              message: response['message'],
+              message: response['message'] ?? "Demande enregistrée avec succès",
               transactionId: paiement['transaction_id'],
               montant: montant,
               modePaiement: operateur,
               token: widget.token,
-              userName: widget.userName,
-              paroisse: widget.paroisse,
-              paroisseId: widget.paroisseId,
+              user: widget.user,
             ),
           ),
         );
       } else {
-        throw Exception(response['message'] ?? 'Erreur inconnue');
+        throw Exception(response['message'] ?? "Erreur inconnue");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur enregistrement : $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erreur : $e")));
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_typesMesse.isEmpty || _typesIntention.isEmpty) {
+    if (_isLoading && (_typesMesse.isEmpty || _typesIntention.isEmpty)) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -148,30 +199,95 @@ class _DemandeMesseFormState extends State<DemandeMesseForm> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          TypeMesseDropdown(types: _typesMesse, value: _typeMesseId, onChanged: (val) => setState(() => _typeMesseId = val)),
+          // ---------------- Formulaire principal ----------------
+          TypeMesseDropdown(
+            types: _typesMesse,
+            value: _typeMesseId,
+            onChanged: (val) => setState(() => _typeMesseId = val),
+          ),
           const SizedBox(height: 10),
-          TypeIntentionDropdown(types: _typesIntention, value: _typeIntentionId, onChanged: (val) => setState(() => _typeIntentionId = val)),
+          TypeIntentionDropdown(
+            types: _typesIntention,
+            value: _typeIntentionId,
+            onChanged: (val) => setState(() => _typeIntentionId = val),
+          ),
           const SizedBox(height: 10),
-          DateMessePicker(date: _dateMesse, onDateSelected: (val) => setState(() => _dateMesse = val)),
+          DateMessePicker(
+            date: _dateMesse,
+            onDateSelected: (val) => setState(() => _dateMesse = val),
+          ),
           const SizedBox(height: 10),
-          HeureMesseField(selectedTime: _heureMesse, onChanged: (val) => setState(() => _heureMesse = val)),
+          HeureMesseField(
+            selectedTime: _heureMesse,
+            onChanged: (val) => setState(() => _heureMesse = val),
+          ),
           const SizedBox(height: 10),
           LieuMesseField(controller: _lieuController),
           const SizedBox(height: 10),
           IntentionsField(controller: _intentionsController),
-          const SizedBox(height: 10),
-          ModePaiementDropdown(modes: _modes, selectedMode: _moyenPaiement, onChanged: (val) => setState(() => _moyenPaiement = val)),
-          const SizedBox(height: 10),
-          MontantField(controller: _montantController),
-          const SizedBox(height: 10),
-          ContactField(controller: _contactController),
           const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _isLoading ? null : _soumettreDemande,
-            icon: _isLoading
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.send),
-            label: Text(_isLoading ? "Envoi en cours..." : "Soumettre la demande"),
+
+          // ---------------- Card Paiement ----------------
+          Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.symmetric(vertical: 10),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Informations de paiement",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ModePaiementDropdown(
+                    modes: _modes,
+                    selectedMode: _moyenPaiement,
+                    onChanged: (val) => setState(() => _moyenPaiement = val),
+                  ),
+                  const SizedBox(height: 10),
+                  MontantField(controller: _montantController),
+                  const SizedBox(height: 10),
+                  ContactField(controller: _contactController),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 55,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                elevation: 4,
+              ),
+              onPressed: _isLoading ? null : _soumettreDemande,
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.send, size: 24),
+              label: Text(
+                _isLoading ? "Envoi en cours..." : "Soumettre la demande",
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
           ),
         ],
       ),

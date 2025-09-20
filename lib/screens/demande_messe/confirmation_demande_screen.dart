@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../navigation/main_scaffold.dart';
+import '../../../models/user.dart';
 
 class ConfirmationDemandeScreen extends StatelessWidget {
   final String message;
@@ -7,9 +7,7 @@ class ConfirmationDemandeScreen extends StatelessWidget {
   final double montant;
   final String modePaiement;
   final String token;
-  final String userName;
-  final String paroisse;
-  final int paroisseId;
+  final User user; // objet complet User
 
   const ConfirmationDemandeScreen({
     super.key,
@@ -18,50 +16,100 @@ class ConfirmationDemandeScreen extends StatelessWidget {
     required this.montant,
     required this.modePaiement,
     required this.token,
-    required this.userName,
-    required this.paroisse,
-    required this.paroisseId,
+    required this.user,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Confirmation")),
+        title: const Text("Confirmation de la demande"),
+        centerTitle: true,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 80),
-            const SizedBox(height: 20),
-            Text(
-              message,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            _buildInfoRow("Mode de paiement", modePaiement.toUpperCase()),
-            _buildInfoRow("Montant", "${montant.toStringAsFixed(0)} FCFA"),
-            _buildInfoRow("ID Transaction", transactionId),
-            const SizedBox(height: 40),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.home),
-              label: const Text("Retour à l’accueil"),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MainScaffold(
-                      token: token,
-                      userName: userName,
-                      paroisse: paroisse,
-                      paroisseId: paroisseId,
+            // Message de succès
+            Card(
+              color: Colors.green[50],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 60,
                     ),
-                  ),
-                  (route) => false,
-                );
+                    const SizedBox(height: 10),
+                    Text(
+                      message,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Infos de paiement
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    const Text(
+                      "Détails du paiement",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Divider(height: 20, thickness: 1),
+                    _buildInfoRow("Transaction ID :", transactionId),
+                    _buildInfoRow(
+                      "Montant :",
+                      "${montant.toStringAsFixed(2)} FCFA",
+                    ),
+                    _buildInfoRow("Mode de paiement :", modePaiement),
+                    _buildInfoRow("Utilisateur :", user.name),
+                    _buildInfoRow(
+                      "Paroisse :",
+                      user.paroisseNom ?? "Non défini",
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            // Bouton Accueil
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.popUntil(context, (route) => route.isFirst);
               },
+              icon: const Icon(Icons.home),
+              label: const Text("Accueil", style: TextStyle(fontSize: 18)),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                backgroundColor: Colors.blueAccent,
+              ),
             ),
           ],
         ),
@@ -73,10 +121,15 @@ class ConfirmationDemandeScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text("$label :", style: const TextStyle(fontWeight: FontWeight.w500)),
-          Flexible(child: Text(value, textAlign: TextAlign.right)),
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(flex: 6, child: Text(value)),
         ],
       ),
     );

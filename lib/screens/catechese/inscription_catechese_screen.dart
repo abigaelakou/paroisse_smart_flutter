@@ -16,12 +16,18 @@ class InscriptionCatecheseScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Inscription à la catéchèse"),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: InscriptionCatecheseForm(
-          token: token,
-          paroisseId: paroisseId,
+      body: SafeArea(
+        child: Container(
+          color: Colors.grey[100],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: InscriptionCatecheseForm(
+              token: token,
+              paroisseId: paroisseId,
+            ),
+          ),
         ),
       ),
     );

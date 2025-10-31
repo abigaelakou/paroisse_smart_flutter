@@ -1,4 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import '../../services/paroisse_service.dart';
@@ -24,7 +23,6 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
   String? _selectedSexe;
   String? _selectedSituation;
   List<String> _sacrementsRecus = [];
-
   Paroisse? _selectedParoisse;
   bool _isLoading = false;
   List<Paroisse> _paroisses = [];
@@ -57,8 +55,6 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
       );
       return;
     }
-
-    // Validation sacrements
     if (_sacrementsRecus.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -90,7 +86,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
             content: Text('Inscription réussie ! Veuillez vous connecter.'),
           ),
         );
-        Navigator.pop(context); // Retour vers login
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erreur lors de l\'inscription')),
@@ -123,7 +119,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
       appBar: AppBar(
         title: const Text('Inscription Paroissien'),
         centerTitle: true,
-        backgroundColor: Colors.green.shade700,
+        backgroundColor: const Color(0xFF228B22),
       ),
       body: SafeArea(
         child: Padding(
@@ -146,10 +142,11 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       const SizedBox(height: 12),
                       const Text(
                         'Paroisse Smart',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: Color(0xFF228B22),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -336,6 +333,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         controller: _passwordController,
                         decoration: const InputDecoration(
                           labelText: 'Mot de passe',
+                          prefixIcon: Icon(Icons.lock),
                         ),
                         obscureText: true,
                         validator: (value) => value != null && value.length >= 8
@@ -349,6 +347,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         controller: _passwordConfirmController,
                         decoration: const InputDecoration(
                           labelText: 'Confirmer mot de passe',
+                          prefixIcon: Icon(Icons.lock_outline),
                         ),
                         obscureText: true,
                         validator: (value) => value == _passwordController.text
@@ -362,14 +361,19 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                           : SizedBox(
                               width: double.infinity,
                               height: 48,
-                              child: ElevatedButton(
+                              child: ElevatedButton.icon(
                                 onPressed: _handleRegister,
-                                child: const Text(
+                                icon: const Icon(Icons.person_add),
+                                label: const Text(
                                   'S\'inscrire',
                                   style: TextStyle(fontSize: 18),
                                 ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade700,
+                                  backgroundColor: const Color(0xFF228B22),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ),
@@ -387,6 +391,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                               'Connectez-vous ici',
                               style: TextStyle(
                                 color: Colors.blue,
+                                fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
                               ),
                             ),

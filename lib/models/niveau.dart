@@ -5,9 +5,6 @@ class NiveauCatechetique {
   NiveauCatechetique({required this.id, required this.libNiveau});
 
   factory NiveauCatechetique.fromJson(Map<String, dynamic> json) {
-    return NiveauCatechetique(
-      id: json['id'],
-      libNiveau: json['lib_niveau'],
-    );
+    return NiveauCatechetique(id: json['id'], libNiveau: json['lib_niveau']);
   }
 }

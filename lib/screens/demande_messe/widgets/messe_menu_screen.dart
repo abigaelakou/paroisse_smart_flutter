@@ -33,6 +33,9 @@ class _MesseTabScreenState extends State<MesseTabScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -41,15 +44,8 @@ class _MesseTabScreenState extends State<MesseTabScreen>
     super.dispose();
   }
 
-  Color _getIndicatorColor(int index) {
-    return _tabController.index == index
-        ? Colors.amberAccent
-        : Colors.transparent;
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Création de l'objet User complet
     final user = User(
       id: widget.userId,
       name: widget.userName,
@@ -62,80 +58,103 @@ class _MesseTabScreenState extends State<MesseTabScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // Barre de menu
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: Colors.deepPurple,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _tabController.animateTo(0),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: _getIndicatorColor(0),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.edit_note, color: Colors.deepPurple),
-                            SizedBox(width: 8),
-                            Text(
-                              "Faire une demande",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _tabController.animateTo(1),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: _getIndicatorColor(1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.list_alt, color: Colors.deepPurple),
-                            SizedBox(width: 8),
-                            Text(
-                              "Mes demandes",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.deepPurple.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildTabButton(
+                        index: 0,
+                        icon: Icons.edit_note,
+                        label: "Faire une demande",
+                        isSelected: _tabController.index == 0,
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: Colors.grey.shade200,
+                    ),
+                    Expanded(
+                      child: _buildTabButton(
+                        index: 1,
+                        icon: Icons.list_alt,
+                        label: "Mes demandes",
+                        isSelected: _tabController.index == 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
 
-            // Contenu des onglets
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // Passer l'objet User complet
                   DemandeMesseForm(token: widget.token, user: user),
                   MesDemandesMesseScreen(token: widget.token),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabButton({
+    required int index,
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => _tabController.animateTo(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [Colors.deepPurple, Colors.deepPurple.shade700],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.grey[600],
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: isSelected ? Colors.white : Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

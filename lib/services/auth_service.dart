@@ -181,4 +181,6 @@ class AuthService {
       debugPrint('[$tag] Body: ${response.data}');
     }
   }
+
+  static Future getUserId() async {}
 }

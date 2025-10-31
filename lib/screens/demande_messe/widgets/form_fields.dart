@@ -15,27 +15,57 @@ class TypeMesseDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<int>(
-      value: value,
-      decoration: const InputDecoration(
-        labelText: "Type de messe",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      items: types
-          .map(
-            (e) => DropdownMenuItem<int>(
-              value: e['id'],
-              child: Text(e['lib_type_messe']),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-      validator: (val) => val == null ? "Champ requis" : null,
+      child: DropdownButtonFormField<int>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: "Type de messe",
+          prefixIcon: const Icon(Icons.church, color: Colors.deepPurple),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        items: types
+            .map(
+              (e) => DropdownMenuItem<int>(
+                value: e['id'],
+                child: Text(e['lib_type_messe']),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+        validator: (val) => val == null ? "Champ requis" : null,
+      ),
     );
   }
 }
 
-/// ------------------ Type d’intention ------------------
+/// ------------------ Type d'intention ------------------
 class TypeIntentionDropdown extends StatelessWidget {
   final List<Map<String, dynamic>> types;
   final int? value;
@@ -50,22 +80,52 @@ class TypeIntentionDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<int>(
-      value: value,
-      decoration: const InputDecoration(
-        labelText: "Type d’intention",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      items: types
-          .map(
-            (e) => DropdownMenuItem<int>(
-              value: e['id'],
-              child: Text(e['lib_type_intention']),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-      validator: (val) => val == null ? "Champ requis" : null,
+      child: DropdownButtonFormField<int>(
+        value: value,
+        decoration: InputDecoration(
+          labelText: "Type d'intention",
+          prefixIcon: const Icon(Icons.favorite, color: Colors.pinkAccent),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.pinkAccent, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        items: types
+            .map(
+              (e) => DropdownMenuItem<int>(
+                value: e['id'],
+                child: Text(e['lib_type_intention']),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+        validator: (val) => val == null ? "Champ requis" : null,
+      ),
     );
   }
 }
@@ -114,26 +174,70 @@ class _DateMessePickerState extends State<DateMessePicker> {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: _controller,
-      readOnly: true,
-      decoration: const InputDecoration(
-        labelText: "Date de la messe",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      validator: (val) => widget.date == null ? "Champ requis" : null,
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate:
-              widget.date ?? DateTime.now().add(const Duration(days: 1)),
-          firstDate: DateTime.now(),
-          lastDate: DateTime(2100),
-        );
-        if (picked != null && mounted) {
-          widget.onDateSelected(picked);
-        }
-      },
+      child: TextFormField(
+        controller: _controller,
+        readOnly: true,
+        decoration: InputDecoration(
+          labelText: "Date de la messe",
+          prefixIcon: const Icon(Icons.calendar_today, color: Colors.blue),
+          suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.blue),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.blue, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        validator: (val) => widget.date == null ? "Champ requis" : null,
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate:
+                widget.date ?? DateTime.now().add(const Duration(days: 1)),
+            firstDate: DateTime.now(),
+            lastDate: DateTime(2100),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: const ColorScheme.light(
+                    primary: Colors.blue,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Colors.black,
+                  ),
+                ),
+                child: child!,
+              );
+            },
+          );
+          if (picked != null && mounted) {
+            widget.onDateSelected(picked);
+          }
+        },
+      ),
     );
   }
 }
@@ -149,31 +253,71 @@ class HeureMesseField extends StatelessWidget {
     required this.onChanged,
   });
 
-  bool? get mounted => null;
-
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () async {
-        final picked = await showTimePicker(
-          context: context,
-          initialTime: selectedTime ?? TimeOfDay.now(),
-        );
-        if (picked != null && mounted!) {
-          onChanged(picked);
-        }
-      },
-      child: InputDecorator(
-        decoration: const InputDecoration(
-          labelText: "Heure de la messe",
-          border: OutlineInputBorder(),
-        ),
-        child: Text(
-          selectedTime != null
-              ? selectedTime!.format(context)
-              : "Appuyez pour choisir l'heure",
-          style: TextStyle(
-            color: selectedTime != null ? Colors.black : Colors.grey[600],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () async {
+          final picked = await showTimePicker(
+            context: context,
+            initialTime: selectedTime ?? TimeOfDay.now(),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: const ColorScheme.light(
+                    primary: Colors.orange,
+                    onPrimary: Colors.white,
+                    surface: Colors.white,
+                    onSurface: Colors.black,
+                  ),
+                ),
+                child: child!,
+              );
+            },
+          );
+          if (picked != null) {
+            onChanged(picked);
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: "Heure de la messe",
+            prefixIcon: const Icon(Icons.access_time, color: Colors.orange),
+            suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.orange),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.orange, width: 2),
+            ),
+          ),
+          child: Text(
+            selectedTime != null
+                ? selectedTime!.format(context)
+                : "Appuyez pour choisir l'heure",
+            style: TextStyle(
+              color: selectedTime != null ? Colors.black87 : Colors.grey[600],
+              fontSize: 16,
+            ),
           ),
         ),
       ),
@@ -189,13 +333,43 @@ class LieuMesseField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      decoration: const InputDecoration(
-        labelText: "Lieu de la messe",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: "Lieu de la messe",
+          prefixIcon: const Icon(Icons.location_on, color: Colors.teal),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.teal, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
+      ),
     );
   }
 }
@@ -208,14 +382,48 @@ class IntentionsField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      maxLines: 3,
-      decoration: const InputDecoration(
-        labelText: "Intentions",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.indigo.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
+      child: TextFormField(
+        controller: controller,
+        maxLines: 4,
+        decoration: InputDecoration(
+          labelText: "Intentions de prière",
+          prefixIcon: const Padding(
+            padding: EdgeInsets.only(bottom: 60),
+            child: Icon(Icons.edit_note, color: Colors.indigo),
+          ),
+          hintText: "Décrivez vos intentions de prière...",
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.indigo, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
+      ),
     );
   }
 }
@@ -233,19 +441,101 @@ class ModePaiementDropdown extends StatelessWidget {
     required this.onChanged,
   });
 
+  IconData _getPaymentIcon(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'moov':
+        return Icons.phone_android;
+      case 'orange':
+        return Icons.phone_iphone;
+      case 'mtn':
+        return Icons.smartphone;
+      case 'wave':
+        return Icons.waves;
+      default:
+        return Icons.payment;
+    }
+  }
+
+  Color _getPaymentColor(String mode) {
+    switch (mode.toLowerCase()) {
+      case 'moov':
+        return Colors.blue;
+      case 'orange':
+        return Colors.orange;
+      case 'mtn':
+        return Colors.yellow.shade700;
+      case 'wave':
+        return Colors.cyan;
+      default:
+        return Colors.green;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedMode,
-      decoration: const InputDecoration(
-        labelText: "Mode de paiement",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      items: modes
-          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-          .toList(),
-      onChanged: onChanged,
-      validator: (val) => val == null ? "Champ requis" : null,
+      child: DropdownButtonFormField<String>(
+        value: selectedMode,
+        decoration: InputDecoration(
+          labelText: "Mode de paiement",
+          prefixIcon: Icon(
+            selectedMode != null
+                ? _getPaymentIcon(selectedMode!)
+                : Icons.payment,
+            color: selectedMode != null
+                ? _getPaymentColor(selectedMode!)
+                : Colors.green,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.green, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        items: modes
+            .map(
+              (m) => DropdownMenuItem(
+                value: m,
+                child: Row(
+                  children: [
+                    Icon(
+                      _getPaymentIcon(m),
+                      color: _getPaymentColor(m),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(m),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+        validator: (val) => val == null ? "Champ requis" : null,
+      ),
     );
   }
 }
@@ -258,19 +548,54 @@ class MontantField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
-        labelText: "Montant (FCFA)",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      validator: (val) {
-        if (val == null || val.isEmpty) return "Champ requis";
-        final parsed = double.tryParse(val);
-        if (parsed == null || parsed <= 0) return "Montant invalide";
-        return null;
-      },
+      child: TextFormField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: "Montant",
+          prefixIcon: const Icon(Icons.attach_money, color: Colors.amber),
+          suffixText: "FCFA",
+          suffixStyle: const TextStyle(
+            color: Colors.amber,
+            fontWeight: FontWeight.bold,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.amber, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        validator: (val) {
+          if (val == null || val.isEmpty) return "Champ requis";
+          final parsed = double.tryParse(val);
+          if (parsed == null || parsed <= 0) return "Montant invalide";
+          return null;
+        },
+      ),
     );
   }
 }
@@ -283,14 +608,45 @@ class ContactField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: TextInputType.phone,
-      decoration: const InputDecoration(
-        labelText: "Numéro Mobile Money",
-        border: OutlineInputBorder(),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.deepPurple.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: TextInputType.phone,
+        decoration: InputDecoration(
+          labelText: "Numéro Mobile Money",
+          prefixIcon: const Icon(Icons.phone, color: Colors.deepPurple),
+          hintText: "Ex: 01 23 45 67 89",
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1),
+          ),
+        ),
+        validator: (val) => val == null || val.isEmpty ? "Champ requis" : null,
+      ),
     );
   }
 }

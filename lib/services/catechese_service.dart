@@ -1,77 +1,68 @@
 import 'dart:convert';
-import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'dart:io';
 
+import 'package:dio/dio.dart';
 import '../models/inscription_catechese.dart';
 import '../models/catechumene.dart';
 import '../models/niveau.dart';
 import '../models/session.dart';
 import '../models/paiement_catechese.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CatecheseService {
   final String token;
-  final String baseUrl;
+  late final Dio _dio;
 
-  CatecheseService({
-    required this.token,
-    this.baseUrl = 'https://www.paroissesmart.com/api',
-  });
-
-  Map<String, String> get _headers => {
-    'Authorization': 'Bearer $token',
-    'Content-Type': 'application/json',
-  };
-
-  // -----------------------------
-  // 📌 Méthodes publiques (API)
-  // -----------------------------
-
-  Future<InscriptionCatechese?> fetchInscriptionDetails(int id) async {
-    try {
-      final response = await _get('/paiement-inscription/$id');
-      final decoded = _safeJsonDecode(response.body);
-      if (decoded != null) return InscriptionCatechese.fromJson(decoded);
-    } catch (e) {
-      debugPrint("Erreur fetchInscriptionDetails: $e");
-    }
-    return null;
+  CatecheseService({required this.token}) {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: 'https://www.paroissesmart.com/api',
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
+    );
   }
 
+  /// 🔹 Récupérer la liste des catéchumènes d'une paroisse
   Future<List<Catechumene>> fetchCatechumenes(int paroisseId) async {
     try {
-      final response = await _get('/catechumenes/$paroisseId');
-      final List data = _safeJsonDecode(response.body, fallback: []);
+      final response = await _dio.get('/catechumenes/$paroisseId');
+
+      final data = response.data as List? ?? [];
       return data.map((e) => Catechumene.fromJson(e)).toList();
     } catch (e) {
-      debugPrint("Erreur fetchCatechumenes: $e");
+      throw Exception('Erreur fetchCatechumenes: $e');
     }
-    return [];
   }
 
+  /// 🔹 Récupérer les niveaux catéchétiques
   Future<List<NiveauCatechetique>> fetchNiveaux() async {
     try {
-      final response = await _get('/niveaux-catechetiques');
-      final List data = _safeJsonDecode(response.body, fallback: []);
+      final response = await _dio.get('/niveaux-catechetiques');
+
+      final data = response.data as List? ?? [];
       return data.map((e) => NiveauCatechetique.fromJson(e)).toList();
     } catch (e) {
-      debugPrint("Erreur fetchNiveaux: $e");
+      throw Exception('Erreur fetchNiveaux: $e');
     }
-    return [];
   }
 
+  /// 🔹 Récupérer les sessions catéchétiques
   Future<List<SessionCatechese>> fetchSessions() async {
     try {
-      final response = await _get('/sessions-catechese');
-      final List data = _safeJsonDecode(response.body, fallback: []);
+      final response = await _dio.get('/sessions-catechese');
+
+      final data = response.data as List? ?? [];
       return data.map((e) => SessionCatechese.fromJson(e)).toList();
     } catch (e) {
-      debugPrint("Erreur fetchSessions: $e");
+      throw Exception('Erreur fetchSessions: $e');
     }
-    return [];
   }
 
-  Future<InscriptionCatechese?> inscrireCatechumene({
+  /// 🔹 Créer une inscription
+  Future<InscriptionCatechese> inscrireCatechumene({
     required String annee,
     required DateTime dateInscription,
     required int catechumeneId,
@@ -79,9 +70,9 @@ class CatecheseService {
     required int sessionId,
   }) async {
     try {
-      final response = await _post(
+      final response = await _dio.post(
         '/inscriptions',
-        body: {
+        data: {
           'annee_catechetique': annee,
           'date_inscription': dateInscription.toIso8601String(),
           'id_catechumene': catechumeneId,
@@ -90,129 +81,124 @@ class CatecheseService {
         },
       );
 
-      final decoded = _safeJsonDecode(response.body);
-      if (decoded is Map && decoded.containsKey('inscription')) {
-        return InscriptionCatechese.fromJson(decoded['inscription']);
-      }
-      debugPrint("Inscription non trouvée dans la réponse: $decoded");
+      final data = response.data['inscription'] ?? {};
+      return InscriptionCatechese.fromJson(data);
     } catch (e) {
-      debugPrint("Erreur inscrireCatechumene: $e");
+      throw Exception('Erreur inscrireCatechumene: $e');
     }
-    return null;
   }
 
-  Future<Map> payerInscription({
+  /// 🔹 Récupérer les détails d'une inscription (inclut paiement si payé)
+  Future<InscriptionCatechese> fetchInscriptionDetails(
+    int inscriptionId,
+  ) async {
+    try {
+      final response = await _dio.get('/paiement-inscription/$inscriptionId');
+
+      final data = response.data ?? {};
+      return InscriptionCatechese.fromJson(data);
+    } catch (e) {
+      throw Exception('Erreur fetchInscriptionDetails: $e');
+    }
+  }
+
+  /// 🔹 Récupérer uniquement les paiements de l'utilisateur connecté
+  Future<List<PaiementCatechese>> fetchPaiements() async {
+    try {
+      final response = await _dio.get("/liste-paiements");
+
+      if (response.statusCode == 200) {
+        final data = response.data['paiements'] as List? ?? [];
+        return data.map((json) => PaiementCatechese.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Erreur API: code ${response.statusCode} - ${response.statusMessage}',
+        );
+      }
+    } on DioException catch (e) {
+      throw Exception('Erreur fetchPaiements: ${e.message}');
+    } catch (e) {
+      throw Exception('Erreur fetchPaiements: $e');
+    }
+  }
+  //static const String _cacheKey = "paiements_catechese";
+
+  /// 🔹 Récupération hybride (cache + API) avec recuUrl
+  // Future<List<PaiementCatechese>> fetchPaiements() async {
+  //   List<PaiementCatechese> paiements = [];
+
+  //   // 1️⃣ Charger depuis cache
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final cached = prefs.getString(_cacheKey);
+  //   if (cached != null) {
+  //     final List<dynamic> decoded = jsonDecode(cached);
+  //     paiements = decoded.map((e) => PaiementCatechese.fromJson(e)).toList();
+  //   }
+
+  //   try {
+  //     // 2️⃣ Charger depuis API
+  //     final response = await _dio.get("/liste-paiements");
+
+  //     if (response.statusCode == 200) {
+  //       final data = response.data;
+
+  //       List<PaiementCatechese> freshPaiements = [];
+  //       if (data is List) {
+  //         freshPaiements = data
+  //             .map((json) => PaiementCatechese.fromJson(json))
+  //             .toList();
+  //       } else if (data is Map) {
+  //         if (data.containsKey('data')) {
+  //           freshPaiements = (data['data'] as List)
+  //               .map((json) => PaiementCatechese.fromJson(json))
+  //               .toList();
+  //         } else if (data.containsKey('paiements')) {
+  //           freshPaiements = (data['paiements'] as List)
+  //               .map((json) => PaiementCatechese.fromJson(json))
+  //               .toList();
+  //         }
+  //       }
+
+  //       // 3️⃣ Mettre à jour cache
+  //       await prefs.setString(
+  //         _cacheKey,
+  //         jsonEncode(freshPaiements.map((p) => p.toJson()).toList()),
+  //       );
+
+  //       paiements = freshPaiements;
+  //     }
+  //   } on DioException catch (_) {
+  //     // si API échoue → on garde le cache
+  //   }
+
+  //   return paiements;
+  // }
+
+  /// 🔹 Effectuer le paiement d'une inscription et récupérer l'URL du reçu
+  Future<String> payerInscription({
     required int inscriptionId,
     required double montant,
     required String modePaiement,
     required String contact,
+    required String paymentStatus,
   }) async {
-    try {
-      final response = await _post(
-        '/paiement-inscription',
-        body: {
-          'id_inscription': inscriptionId,
-          'montant': montant,
-          'mode_paiement': modePaiement.toLowerCase(),
-          'contact': contact.isEmpty ? null : contact,
-          'payment_status': 'Payé',
-        },
-      );
+    final response = await _dio.post(
+      '/paiement-inscription',
+      data: {
+        'id_inscription': inscriptionId,
+        'montant': montant,
+        'mode_paiement': modePaiement,
+        'contact': contact,
+        'payment_status': paymentStatus,
+      },
+    );
 
-      final data = _safeJsonDecode(response.body, fallback: {});
-      if (data is Map) return data;
-      debugPrint("Paiement réponse invalide: ${response.body}");
-    } catch (e) {
-      debugPrint("Erreur payerInscription: $e");
+    // L'API renvoie directement recu_url
+    final recuUrl = response.data['recu_url'] as String?;
+    if (recuUrl == null) {
+      throw Exception("Impossible de récupérer le reçu.");
     }
-    return {};
-  }
 
-  Future<List<PaiementCatechese>> fetchPaiements() async {
-    try {
-      final response = await _get('/liste-paiements');
-      final data = _safeJsonDecode(response.body, fallback: {});
-      if (data is Map && data.containsKey('paiements')) {
-        return (data['paiements'] as List)
-            .map((e) => PaiementCatechese.fromJson(e))
-            .toList();
-      }
-    } catch (e) {
-      debugPrint("Erreur fetchPaiements: $e");
-    }
-    return [];
-  }
-
-  // ---------------------------------------
-  // 🔧 Helpers pour factoriser les requêtes
-  // ---------------------------------------
-
-  Future<http.Response> _get(String path) async {
-    final uri = Uri.parse('$baseUrl$path');
-    try {
-      final response = await http
-          .get(uri, headers: _headers)
-          .timeout(const Duration(seconds: 10));
-      _handleErrors(response);
-      return response;
-    } on TimeoutException {
-      throw Exception("Temps d'attente dépassé pour $path");
-    } catch (e) {
-      debugPrint("Erreur GET $path: $e");
-      rethrow;
-    }
-  }
-
-  Future<http.Response> _post(
-    String path, {
-    required Map<String, dynamic> body,
-  }) async {
-    final uri = Uri.parse('$baseUrl$path');
-    try {
-      final response = await http
-          .post(uri, headers: _headers, body: jsonEncode(body))
-          .timeout(const Duration(seconds: 10));
-      _handleErrors(response);
-      return response;
-    } on TimeoutException {
-      throw Exception("Temps d'attente dépassé pour $path");
-    } catch (e) {
-      debugPrint("Erreur POST $path: $e");
-      rethrow;
-    }
-  }
-
-  // -----------------------------
-  // 📌 Gestion des erreurs
-  // -----------------------------
-
-  void _handleErrors(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) return;
-
-    try {
-      final decoded = jsonDecode(response.body);
-      final message = (decoded is Map && decoded['message'] != null)
-          ? decoded['message']
-          : 'Erreur inconnue';
-      if (kDebugMode) {
-        debugPrint("⚠️ Erreur API (${response.statusCode}): $message");
-      }
-      throw Exception("(${response.statusCode}) $message");
-    } catch (_) {
-      throw Exception("(${response.statusCode}) Erreur de traitement serveur");
-    }
-  }
-
-  // -----------------------------
-  // 📌 Safe JSON Decoder
-  // -----------------------------
-
-  dynamic _safeJsonDecode(String source, {dynamic fallback}) {
-    try {
-      return jsonDecode(source);
-    } catch (e) {
-      if (kDebugMode) debugPrint("⚠️ Erreur JSON: $e");
-      return fallback;
-    }
+    return recuUrl;
   }
 }

@@ -91,15 +91,49 @@ class _HorizontalCarouselState<T> extends State<HorizontalCarousel<T>> {
         itemCount: itemCount,
         itemBuilder: (context, index) {
           if (index >= widget.items.length) {
-            return const SizedBox(
-              width: 60,
-              child: Center(child: CircularProgressIndicator()),
+            return Container(
+              width: 80,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.purple[100]!, Colors.purple[200]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.purple.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.purple[600]!,
+                  ),
+                  strokeWidth: 3,
+                ),
+              ),
             );
           }
           final item = widget.items[index];
-          return Container(
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
             width: widget.itemWidth,
             margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
             child: widget.itemBuilder(context, item),
           );
         },

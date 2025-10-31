@@ -28,13 +28,14 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
   int? _typeDonId;
   bool _anonyme = false;
 
-  final List<String> _modesPaiementLabels = [
-    'Moov',
-    'Orange',
-    'MTN',
-    'Wave',
-    'Espèces',
+  final List<Map<String, dynamic>> _modesPaiement = [
+    {'label': 'Wave', 'icon': Icons.water_drop, 'color': Colors.blue},
+    {'label': 'Orange', 'icon': Icons.phone_android, 'color': Colors.orange},
+    {'label': 'MTN', 'icon': Icons.signal_cellular_alt, 'color': Colors.yellow},
+    {'label': 'Moov', 'icon': Icons.phone_iphone, 'color': Colors.red},
+    {'label': 'Espèces', 'icon': Icons.payments, 'color': Colors.green},
   ];
+
   final Map<String, String> _modesPaiementMap = {
     'Moov': 'moov',
     'Orange': 'orange',
@@ -53,6 +54,14 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
     _loadTypesDeDon();
   }
 
+  @override
+  void dispose() {
+    _montantController.dispose();
+    _contactController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadTypesDeDon() async {
     try {
       final types = await DonService.fetchTypesDon(
@@ -67,7 +76,11 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       setState(() => _isInitLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur chargement types de don : $e")),
+          SnackBar(
+            content: Text("Erreur chargement types de don : $e"),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -76,11 +89,11 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
   Future<void> _traiterPaiementEtDon() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_modePaiement == null ||
-        !_modesPaiementMap.containsKey(_modePaiement)) {
+    if (_modePaiement == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Veuillez choisir un mode de paiement valide."),
+          content: Text("Veuillez choisir un mode de paiement."),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
@@ -88,7 +101,10 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
 
     if (_typeDonId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Veuillez choisir un type de don.")),
+        const SnackBar(
+          content: Text("Veuillez choisir un type de don."),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -98,6 +114,20 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
     final montant = double.parse(_montantController.text.trim());
     final numero = _contactController.text.trim();
     final modePaiementKey = _modesPaiementMap[_modePaiement]!;
+
+    if (['moov', 'mtn', 'orange', 'wave'].contains(modePaiementKey) &&
+        numero.isEmpty) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Numéro Mobile Money requis pour ce paiement."),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
 
     final paiement = await PaiementService.simulerPaiement(
       operateur: modePaiementKey,
@@ -109,7 +139,10 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur paiement : ${paiement['message']}")),
+          SnackBar(
+            content: Text("Erreur paiement : ${paiement['message']}"),
+            backgroundColor: Colors.red.shade400,
+          ),
         );
       }
       return;
@@ -133,7 +166,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       "description": _descriptionController.text.trim(),
       "mode_paiement": mode,
       "montant": montant,
-      "contact": _anonyme ? '' : numero,
+      "contact": numero,
       "id_type_don": _typeDonId,
       "paroisse_id": widget.paroisseId,
       "anonymous_donation": _anonyme,
@@ -149,10 +182,6 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
         _descriptionController.clear();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("✅ Don enregistré avec succès !")),
-          );
-
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -162,6 +191,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                 description: (donData['description'] ?? '').toString(),
                 transactionId: transactionId,
                 token: widget.token,
+                paroisseId: widget.paroisseId,
               ),
             ),
           );
@@ -171,9 +201,12 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Erreur enregistrement : $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erreur enregistrement : $e"),
+            backgroundColor: Colors.red.shade400,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -183,144 +216,410 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isInitLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Colors.purple.shade700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Chargement...",
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text("Faire un don"),
+        elevation: 0,
+        backgroundColor: Colors.purple.shade700,
+        title: const Text(
+          "Faire un don",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MesDonsScreen(token: widget.token),
+                ),
+              );
+            },
+            tooltip: "Historique",
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Montant
-              TextFormField(
-                controller: _montantController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: "Montant (FCFA)"),
-                validator: (value) {
-                  if (value == null || value.isEmpty)
-                    return "Champ obligatoire";
-                  if (double.tryParse(value) == null) return "Montant invalide";
-                  if (double.parse(value) <= 0) return "Montant doit être > 0";
-                  return null;
-                },
-              ),
-              const SizedBox(height: 10),
-
-              // Mode de paiement
-              DropdownButtonFormField<String>(
-                value: _modePaiement,
-                items: _modesPaiementLabels
-                    .map(
-                      (mode) =>
-                          DropdownMenuItem(value: mode, child: Text(mode)),
-                    )
-                    .toList(),
-                onChanged: (val) => setState(() => _modePaiement = val),
-                decoration: const InputDecoration(
-                  labelText: "Mode de paiement",
-                ),
-                validator: (value) => value == null ? "Champ requis" : null,
-              ),
-              const SizedBox(height: 10),
-
-              // Type de don
-              DropdownButtonFormField<int>(
-                value: _typeDonId,
-                items: _typesDon
-                    .map(
-                      (type) => DropdownMenuItem(
-                        value: type["id"] as int,
-                        child: Text(type["lib_type_don"] ?? ''),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (val) => setState(() => _typeDonId = val),
-                decoration: const InputDecoration(labelText: "Type de don"),
-                validator: (value) => value == null ? "Champ requis" : null,
-              ),
-              const SizedBox(height: 10),
-
-              // Contact
-              Opacity(
-                opacity: _anonyme ? 0.5 : 1,
-                child: TextFormField(
-                  controller: _contactController,
-                  enabled: !_anonyme,
-                  decoration: const InputDecoration(
-                    labelText: "Contact Mobile Money",
+              // En-tête inspirant
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple.shade700, Colors.purple.shade500],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  keyboardType: TextInputType.phone,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.purple.shade200,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.volunteer_activism,
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      "Votre générosité fait la différence",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Chaque don compte et aide notre paroisse à poursuivre sa mission",
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Montant
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: _montantController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: "Montant du don",
+                    hintText: "Ex: 5000",
+                    suffixText: "FCFA",
+                    prefixIcon: Icon(
+                      Icons.payments,
+                      color: Colors.purple.shade700,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
                   validator: (value) {
-                    if (!_anonyme && (value == null || value.isEmpty)) {
-                      return "Champ obligatoire";
-                    }
-                    if (!_anonyme && value!.length < 8) {
-                      return "Numéro trop court";
-                    }
+                    if (value == null || value.isEmpty) return "Montant requis";
+                    if (double.tryParse(value) == null)
+                      return "Montant invalide";
+                    if (double.parse(value) <= 0)
+                      return "Montant doit être > 0";
                     return null;
                   },
                 ),
               ),
-              const SizedBox(height: 10),
 
-              // Description
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: "Description (facultatif)",
+              const SizedBox(height: 16),
+
+              // Type de don
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: DropdownButtonFormField<int>(
+                  value: _typeDonId,
+                  decoration: InputDecoration(
+                    labelText: "Type de don",
+                    prefixIcon: Icon(
+                      Icons.category,
+                      color: Colors.purple.shade700,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  items: _typesDon
+                      .map(
+                        (type) => DropdownMenuItem(
+                          value: type["id"] as int,
+                          child: Text(type["lib_type_don"] ?? ''),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) => setState(() => _typeDonId = val),
+                  validator: (value) => value == null ? "Type requis" : null,
                 ),
               ),
 
-              // Don anonyme
-              CheckboxListTile(
-                title: const Text("Faire un don anonyme"),
-                value: _anonyme,
-                onChanged: (val) {
-                  setState(() {
-                    _anonyme = val ?? false;
-                    if (_anonyme) _contactController.clear();
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // Bouton d'envoi
-              ElevatedButton.icon(
-                onPressed: _isLoading ? null : _traiterPaiementEtDon,
-                icon: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.send),
-                label: Text(_isLoading ? "Traitement..." : "Faire un don"),
+              // Section Mode de paiement
+              const Text(
+                "Mode de paiement",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-
               const SizedBox(height: 12),
 
-              // Historique des dons
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MesDonsScreen(token: widget.token),
+              // Grille de modes de paiement
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 1.2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: _modesPaiement.length,
+                itemBuilder: (context, index) {
+                  final mode = _modesPaiement[index];
+                  final isSelected = _modePaiement == mode['label'];
+
+                  return GestureDetector(
+                    onTap: () => setState(() => _modePaiement = mode['label']),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? mode['color'].withOpacity(0.15)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? mode['color']
+                              : Colors.grey.shade300,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: mode['color'].withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : [],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            mode['icon'],
+                            color: isSelected
+                                ? mode['color']
+                                : Colors.grey.shade600,
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            mode['label'],
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? mode['color']
+                                  : Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
-                child: const Text(
-                  "Voir l'historique de mes dons",
-                  style: TextStyle(decoration: TextDecoration.underline),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Contact Mobile Money
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: _contactController,
+                  decoration: InputDecoration(
+                    labelText: "Numéro Mobile Money",
+                    hintText: "Ex: 0707070707",
+                    prefixIcon: Icon(
+                      Icons.phone_android,
+                      color: Colors.purple.shade700,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return "Contact requis";
+                    if (value.length < 8) return "Numéro trop court";
+                    return null;
+                  },
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // Description
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: "Message (optionnel)",
+                    hintText: "Ajoutez un message à votre don...",
+                    prefixIcon: Icon(
+                      Icons.message,
+                      color: Colors.purple.shade700,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Don anonyme
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.purple.shade200),
+                ),
+                child: CheckboxListTile(
+                  title: const Text(
+                    "Faire un don anonyme",
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: const Text(
+                    "Votre contact ne sera pas visible côté paroisse",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  value: _anonyme,
+                  onChanged: (val) => setState(() => _anonyme = val ?? false),
+                  activeColor: Colors.purple.shade700,
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Bouton d'envoi
+              ElevatedButton(
+                onPressed: _isLoading ? null : _traiterPaiementEtDon,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 4,
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.favorite),
+                          SizedBox(width: 8),
+                          Text(
+                            "Faire un don",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+
+              const SizedBox(height: 24),
             ],
           ),
         ),

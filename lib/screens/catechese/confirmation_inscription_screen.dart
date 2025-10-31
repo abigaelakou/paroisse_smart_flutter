@@ -1,23 +1,20 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:lottie/lottie.dart';
 import 'package:paroisse_smart_flutter/screens/catechese/liste_paiements_screen.dart';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart'; // Ajouter dépendance pour PDF
-
-import '../../models/inscription_catechese.dart';
-import '../../services/catechese_service.dart';
-import '../../services/paiement_service.dart';
+import 'package:paroisse_smart_flutter/services/catechese_service.dart';
+import 'recu_pdf_screen.dart';
 
 class ConfirmationInscriptionScreen extends StatefulWidget {
   final int inscriptionId;
   final String token;
+  final int paroisseId;
 
   const ConfirmationInscriptionScreen({
     super.key,
     required this.inscriptionId,
     required this.token,
-    required paroisseId,
+    required this.paroisseId,
   });
 
   @override
@@ -27,279 +24,511 @@ class ConfirmationInscriptionScreen extends StatefulWidget {
 
 class _ConfirmationInscriptionScreenState
     extends State<ConfirmationInscriptionScreen> {
-  late final CatecheseService _service;
-
-  InscriptionCatechese? _details;
-  final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
+  int _montant = 0;
   String _modePaiement = 'Wave';
   String _contact = '';
-  double _montant = 0;
-  bool _isLoading = true;
-  bool _isSubmitting = false;
-  String? _recuUrl;
-  String? _recuLocalPath;
 
-  final List<String> _modes = ['Wave', 'Orange', 'MTN', 'Moov'];
+  final _formKey = GlobalKey<FormState>();
+  final _montantController = TextEditingController();
+  final _contactController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    _service = CatecheseService(token: widget.token);
-    _loadDetails();
-  }
-
-  Future<void> _loadDetails() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final result = await _service.fetchInscriptionDetails(
-        widget.inscriptionId,
-      );
-
-      final montantPaiement = result?.paiement?.montant ?? 0.0;
-
-      setState(() {
-        _details = result;
-        _montant = montantPaiement;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erreur de chargement des détails")),
-        );
-      }
-    }
+  void dispose() {
+    _montantController.dispose();
+    _contactController.dispose();
+    super.dispose();
   }
 
   Future<void> _submitPaiement() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isSubmitting) return;
 
     setState(() => _isSubmitting = true);
 
     try {
-      // 1️⃣ Simuler le paiement
-      final result = await PaiementService.simulerPaiement(
-        operateur: _modePaiement,
-        numero: _contact,
-        montant: _montant,
-      );
-
-      if (!result['success']) {
-        throw Exception(result['message'] ?? 'Échec du paiement');
-      }
-
-      // 2️⃣ Appel API pour enregistrer le paiement
-      final recuData = await _service.payerInscription(
+      final service = CatecheseService(token: widget.token);
+      final recuUrl = await service.payerInscription(
         inscriptionId: widget.inscriptionId,
-        montant: _montant,
+        montant: _montant.toDouble(),
         modePaiement: _modePaiement,
         contact: _contact,
+        paymentStatus: 'Payé',
       );
 
-      // 3️⃣ Récupérer l'URL du reçu
-      _recuUrl = recuData['url'] as String?;
-      if (recuData['montant'] != null) {
-        _montant = double.tryParse(recuData['montant'].toString()) ?? _montant;
-      }
+      if (!mounted) return;
 
-      // 4️⃣ Télécharger localement le PDF
-      if (_recuUrl != null) {
-        _recuLocalPath = await _telechargerRecu(
-          _recuUrl!,
-          widget.inscriptionId,
+      if (recuUrl != null && recuUrl.isNotEmpty) {
+        final fullUrl = recuUrl.startsWith('http')
+            ? recuUrl
+            : 'https://paroissesmart.com$recuUrl';
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: Colors.green),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+
+        if (!mounted) return;
+
+        final response = await http.get(Uri.parse(fullUrl));
+
+        if (!mounted) return;
+        Navigator.pop(context);
+
+        if (response.statusCode == 200 &&
+            response.contentLength != null &&
+            response.contentLength! > 500) {
+          final shouldViewReceipt = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset(
+                      'assets/animations/success.json',
+                      repeat: false,
+                      height: 120,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Paiement réussi !',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Votre reçu est prêt à être consulté.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.green,
+                              side: const BorderSide(color: Colors.green),
+                              minimumSize: const Size.fromHeight(45),
+                            ),
+                            child: const Text('Plus tard'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              minimumSize: const Size.fromHeight(45),
+                            ),
+                            child: const Text('Voir le reçu'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+
+          if (!mounted) return;
+
+          if (shouldViewReceipt == true) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RecuPdfScreen(
+                  url: fullUrl,
+                  token: widget.token,
+                  paroisseId: widget.paroisseId,
+                ),
+              ),
+            );
+          } else {
+            Navigator.of(context).popUntil((route) {
+              return route.settings.name == '/home' || route.isFirst;
+            });
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Le reçu est en cours de génération...'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ListePaiementsCatecheseScreen(
+                token: widget.token,
+                paroisseId: widget.paroisseId,
+              ),
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur : reçu introuvable.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Erreur : ${e.toString()}")));
-      }
+      if (!mounted) return;
+
+      Navigator.of(context).popUntil((route) => route is! DialogRoute);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur paiement : $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
-  /// Téléchargement du PDF si non existant
-  Future<String?> _telechargerRecu(String url, int inscriptionId) async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = '${dir.path}/recu_$inscriptionId.pdf';
-
-      final file = File(filePath);
-      if (await file.exists()) {
-        return filePath; // PDF déjà présent
-      }
-
-      final dio = Dio();
-      await dio.download(url, filePath);
-
-      return filePath;
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur téléchargement : ${e.toString()}")),
-        );
-      }
-      return null;
-    }
-  }
-
-  void _ouvrirRecu() {
-    if (_recuLocalPath == null) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RecuPdfLocalScreen(path: _recuLocalPath!),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paiement de l\'inscription')),
-      body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _recuLocalPath != null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Colors.green,
-                            size: 60,
-                          ),
-                          const SizedBox(height: 20),
-                          const Text(
-                            'Paiement effectué avec succès !',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton.icon(
-                            onPressed: _ouvrirRecu,
-                            icon: const Icon(Icons.download),
-                            label: const Text("Voir le reçu"),
-                          ),
-                          const SizedBox(height: 10),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ListePaiementsCatecheseScreen(
-                                    token: widget.token,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text("Voir mes paiements"),
-                          ),
-                        ],
-                      )
-                    : SingleChildScrollView(
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                "Catéchumène : ${_details?.nomCatechumene ?? ''}",
-                              ),
-                              Text("Niveau : ${_details?.niveau ?? ''}"),
-                              Text("Session : ${_details?.session ?? ''}"),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                decoration: const InputDecoration(
-                                  labelText: "Montant",
-                                  border: OutlineInputBorder(),
-                                ),
-                                initialValue: _montant.toString(),
-                                keyboardType: TextInputType.number,
-                                validator: (val) =>
-                                    val == null || double.tryParse(val) == null
-                                    ? "Entrer un montant valide"
-                                    : null,
-                                onChanged: (val) =>
-                                    _montant = double.tryParse(val) ?? 0.0,
-                              ),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: "Mode de paiement",
-                                  border: OutlineInputBorder(),
-                                ),
-                                value: _modePaiement,
-                                items: _modes
-                                    .map(
-                                      (mode) => DropdownMenuItem(
-                                        value: mode,
-                                        child: Text(mode),
-                                      ),
-                                    )
-                                    .toList(),
-                                onChanged: (val) =>
-                                    setState(() => _modePaiement = val!),
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                decoration: const InputDecoration(
-                                  labelText: "Contact (optionnel)",
-                                  border: OutlineInputBorder(),
-                                ),
-                                onChanged: (val) => _contact = val,
-                                keyboardType: TextInputType.phone,
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : _submitPaiement,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
-                                child: _isSubmitting
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text("Payer"),
-                              ),
-                            ],
+      appBar: AppBar(
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.payment, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Paiement inscription',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        centerTitle: true,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.green.shade700, Colors.green.shade500],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.green.shade50, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - value) * 20),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white, size: 32),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Veuillez renseigner les informations de paiement',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
               ),
+              const SizedBox(height: 24),
+
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - value) * 15),
+                      child: child,
+                    ),
+                  );
+                },
+                child: TextFormField(
+                  controller: _montantController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Montant (FCFA)',
+                    hintText: 'Entrez le montant',
+                    prefixIcon: Container(
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.payments,
+                        color: Colors.green.shade700,
+                        size: 20,
+                      ),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Colors.green.shade600,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Montant requis';
+                    final montant = int.tryParse(v);
+                    if (montant == null || montant <= 0) {
+                      return 'Montant invalide';
+                    }
+                    return null;
+                  },
+                  onChanged: (v) => _montant = int.tryParse(v) ?? 0,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - value) * 15),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: DropdownButtonFormField<String>(
+                    value: _modePaiement,
+                    decoration: InputDecoration(
+                      labelText: 'Mode de paiement',
+                      prefixIcon: Container(
+                        margin: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.account_balance_wallet,
+                          color: Colors.blue.shade700,
+                          size: 20,
+                        ),
+                      ),
+                      border: InputBorder.none,
+                    ),
+                    items: ['Wave', 'Orange', 'MTN', 'Moov']
+                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _modePaiement = v!),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 900),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - value) * 15),
+                      child: child,
+                    ),
+                  );
+                },
+                child: TextFormField(
+                  controller: _contactController,
+                  decoration: InputDecoration(
+                    labelText: 'Numéro de téléphone',
+                    hintText: 'Ex: 77 123 45 67',
+                    prefixIcon: Container(
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.phone,
+                        color: Colors.orange.shade700,
+                        size: 20,
+                      ),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Colors.orange.shade600,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Contact requis';
+                    if (v.length < 8) return 'Numéro invalide';
+                    return null;
+                  },
+                  onChanged: (v) => _contact = v,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.scale(
+                      scale: 0.95 + (value * 0.05),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _isSubmitting ? null : _submitPaiement,
+                    icon: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.check_circle, size: 24),
+                    label: Text(
+                      _isSubmitting ? 'Traitement...' : 'Payer maintenant',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      minimumSize: const Size.fromHeight(56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    );
-  }
-}
-
-class RecuPdfLocalScreen extends StatelessWidget {
-  final String path;
-  const RecuPdfLocalScreen({super.key, required this.path});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reçu PDF')),
-      body: SfPdfViewer.file(File(path)),
     );
   }
 }

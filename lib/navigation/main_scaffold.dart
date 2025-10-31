@@ -10,9 +10,14 @@ import '../models/user.dart';
 class MainScaffold extends StatefulWidget {
   final String token;
   final User user;
+  final int initialIndex;
 
-  const MainScaffold({Key? key, required this.token, required this.user})
-    : super(key: key);
+  const MainScaffold({
+    Key? key,
+    required this.token,
+    required this.user,
+    this.initialIndex = 0,
+  }) : super(key: key);
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -27,6 +32,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   void initState() {
     super.initState();
     _currentUser = widget.user;
+    _currentIndex = widget.initialIndex;
     _syncUserData();
   }
 
@@ -72,6 +78,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         token: widget.token,
         paroisseId: _currentUser.paroisseId,
       ),
+
       ProfileScreen(token: widget.token, paroisseId: _currentUser.paroisseId),
     ];
 

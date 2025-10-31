@@ -23,6 +23,10 @@ dependencies:
   connectivity_plus: ^7.0.0
   syncfusion_flutter_pdfviewer: ^31.1.19
   path_provider: ^2.0.15
+  open_file: ^3.3.2
+  lottie: ^3.1.0
+  fluttertoast: ^8.2.1
+
 
 dev_dependencies:
   flutter_test:
@@ -44,3 +48,4 @@ flutter:
     - assets/images/logo/logo1.png
     - assets/images/logo/app_icon.png
     - assets/images/banner.jpg
+    - assets/animations/success.json

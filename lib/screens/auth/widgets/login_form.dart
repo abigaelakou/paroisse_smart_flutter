@@ -22,11 +22,8 @@ class _LoginFormState extends State<LoginForm> {
         _passwordController.text.trim(),
       );
 
-      if (user != null) {
-        // Redirection vers l'écran Home
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+      if (user != null && mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       if (mounted) {
@@ -41,45 +38,89 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text("Connexion", style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email'),
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) => value == null || value.isEmpty
-                ? 'Veuillez entrer votre email'
-                : null,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Mot de passe'),
-            validator: (value) => value == null || value.isEmpty
-                ? 'Veuillez entrer votre mot de passe'
-                : null,
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _loading ? null : _handleLogin,
-            child: _loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.all(24),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.lock_outline,
+                size: 48,
+                color: Colors.blueAccent,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Connexion",
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Veuillez entrer votre email'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Veuillez entrer votre mot de passe'
+                    : null,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _loading ? null : _handleLogin,
+                  icon: const Icon(Icons.login),
+                  label: _loading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Se connecter'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  )
-                : const Text('Se connecter'),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

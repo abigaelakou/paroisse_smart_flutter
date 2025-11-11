@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import '../../services/paroisse_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/formatters.dart';
 
 class RegisterParoissienScreen extends StatefulWidget {
   const RegisterParoissienScreen({Key? key}) : super(key: key);
@@ -19,6 +20,8 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   final _dateNaissController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   String? _selectedSexe;
   String? _selectedSituation;
@@ -154,8 +157,11 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       // Nom complet
                       TextFormField(
                         controller: _nameController,
+                        inputFormatters: [
+                          UpperCaseTextFormatter(), // ✅ transforme en majuscule
+                        ],
                         decoration: const InputDecoration(
-                          labelText: 'Nom complet',
+                          labelText: 'Nom et Prénom(s) complet',
                         ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Veuillez entrer votre nom'
@@ -327,33 +333,61 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       // Mot de passe
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
                           labelText: 'Mot de passe',
-                          prefixIcon: Icon(Icons.lock),
+                          prefixIcon: const Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
-                        obscureText: true,
                         validator: (value) => value != null && value.length >= 8
                             ? null
                             : 'Mot de passe trop court',
                       ),
+
                       const SizedBox(height: 16),
 
                       // Confirmation mot de passe
                       TextFormField(
                         controller: _passwordConfirmController,
-                        decoration: const InputDecoration(
+                        obscureText: _obscureConfirmPassword,
+                        decoration: InputDecoration(
                           labelText: 'Confirmer mot de passe',
-                          prefixIcon: Icon(Icons.lock_outline),
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
                         ),
-                        obscureText: true,
                         validator: (value) => value == _passwordController.text
                             ? null
                             : 'Les mots de passe ne correspondent pas',
                       ),
+
                       const SizedBox(height: 32),
 
                       _isLoading

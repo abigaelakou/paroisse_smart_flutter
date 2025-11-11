@@ -154,7 +154,7 @@ class DonCard extends StatelessWidget {
                         child: ElevatedButton(
                           onPressed: () => Navigator.pop(context),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple.shade700,
+                            backgroundColor: Colors.amber.shade700,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

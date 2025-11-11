@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../services/don_service.dart';
 import '../../services/paiement_service.dart';
+import '../../../models/user.dart';
 import 'don_confirmation_screen.dart';
 import 'mes_dons_screen.dart';
 
 class FaireUnDonScreen extends StatefulWidget {
   final String token;
   final int paroisseId;
+  final User user;
 
   const FaireUnDonScreen({
     super.key,
     required this.token,
     required this.paroisseId,
+    required this.user,
   });
 
   @override
@@ -168,8 +171,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       "montant": montant,
       "contact": numero,
       "id_type_don": _typeDonId,
-      "paroisse_id": widget.paroisseId,
-      "anonymous_donation": _anonyme,
+      "anonymous_donation": _anonyme, // booléen correct
       "transaction_id": transactionId,
     };
 
@@ -192,6 +194,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                 transactionId: transactionId,
                 token: widget.token,
                 paroisseId: widget.paroisseId,
+                user: widget.user,
               ),
             ),
           );
@@ -224,7 +227,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
             children: [
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.purple.shade700,
+                  Colors.amber.shade700,
                 ),
               ),
               const SizedBox(height: 16),
@@ -243,7 +246,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: Colors.purple.shade700,
+        backgroundColor: Colors.amber.shade700,
         title: const Text(
           "Faire un don",
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -275,14 +278,14 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.purple.shade700, Colors.purple.shade500],
+                    colors: [Colors.amber.shade700, Colors.orange.shade600],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.purple.shade200,
+                      color: Colors.orange.shade200,
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -307,7 +310,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      "Chaque don compte et aide notre paroisse à poursuivre sa mission",
+                      "Chaque don compte et aide votre paroisse à poursuivre sa mission",
                       style: TextStyle(color: Colors.white70, fontSize: 13),
                       textAlign: TextAlign.center,
                     ),
@@ -339,7 +342,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                     suffixText: "FCFA",
                     prefixIcon: Icon(
                       Icons.payments,
-                      color: Colors.purple.shade700,
+                      color: Colors.amber.shade700,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -380,7 +383,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                     labelText: "Type de don",
                     prefixIcon: Icon(
                       Icons.category,
-                      color: Colors.purple.shade700,
+                      color: Colors.amber.shade700,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -503,7 +506,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                     hintText: "Ex: 0707070707",
                     prefixIcon: Icon(
                       Icons.phone_android,
-                      color: Colors.purple.shade700,
+                      color: Colors.amber.shade700,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -544,7 +547,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                     hintText: "Ajoutez un message à votre don...",
                     prefixIcon: Icon(
                       Icons.message,
-                      color: Colors.purple.shade700,
+                      color: Colors.amber.shade700,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -561,9 +564,9 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
               // Don anonyme
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.purple.shade50,
+                  color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.purple.shade200),
+                  border: Border.all(color: Colors.amber.shade200),
                 ),
                 child: CheckboxListTile(
                   title: const Text(
@@ -576,7 +579,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                   ),
                   value: _anonyme,
                   onChanged: (val) => setState(() => _anonyme = val ?? false),
-                  activeColor: Colors.purple.shade700,
+                  activeColor: Colors.amber.shade700,
                 ),
               ),
 
@@ -586,7 +589,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _traiterPaiementEtDon,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple.shade700,
+                  backgroundColor: Colors.amber.shade700,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

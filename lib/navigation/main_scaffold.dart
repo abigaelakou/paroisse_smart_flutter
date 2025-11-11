@@ -65,6 +65,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       FaireUnDonScreen(
         token: widget.token,
         paroisseId: _currentUser.paroisseId,
+        user: _currentUser,
       ),
       MesseTabScreen(
         token: widget.token,
@@ -77,6 +78,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       CatecheseMenuScreen(
         token: widget.token,
         paroisseId: _currentUser.paroisseId,
+        user: _currentUser,
       ),
 
       ProfileScreen(token: widget.token, paroisseId: _currentUser.paroisseId),

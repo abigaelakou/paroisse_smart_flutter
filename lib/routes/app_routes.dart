@@ -66,11 +66,13 @@ class AppRoutes {
         final token = args?['token'] ?? '';
         final inscriptionId = args?['inscriptionId'] ?? 0;
         final paroisseId = args?['paroisseId'] ?? 0;
+        final user = args?['user'] as User;
         return MaterialPageRoute(
           builder: (_) => ConfirmationInscriptionScreen(
             token: token,
             inscriptionId: inscriptionId,
             paroisseId: paroisseId,
+            user: user,
           ),
         );
 

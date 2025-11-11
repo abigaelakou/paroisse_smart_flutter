@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
+import 'package:paroisse_smart_flutter/navigation/main_scaffold.dart';
 import 'package:paroisse_smart_flutter/screens/catechese/liste_paiements_screen.dart';
 import 'package:paroisse_smart_flutter/services/catechese_service.dart';
 import 'recu_pdf_screen.dart';
+import '../../models/user.dart';
 
 class ConfirmationInscriptionScreen extends StatefulWidget {
   final int inscriptionId;
   final String token;
   final int paroisseId;
+  final User user;
 
   const ConfirmationInscriptionScreen({
     super.key,
     required this.inscriptionId,
     required this.token,
     required this.paroisseId,
+    required this.user,
   });
 
   @override
@@ -67,7 +71,7 @@ class _ConfirmationInscriptionScreenState
           context: context,
           barrierDismissible: false,
           builder: (context) => const Center(
-            child: CircularProgressIndicator(color: Colors.green),
+            child: CircularProgressIndicator(color: Colors.teal),
           ),
         );
 
@@ -120,8 +124,8 @@ class _ConfirmationInscriptionScreenState
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(context, false),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.green,
-                              side: const BorderSide(color: Colors.green),
+                              foregroundColor: Colors.teal,
+                              side: const BorderSide(color: Colors.teal),
                               minimumSize: const Size.fromHeight(45),
                             ),
                             child: const Text('Plus tard'),
@@ -132,7 +136,7 @@ class _ConfirmationInscriptionScreenState
                           child: ElevatedButton(
                             onPressed: () => Navigator.pop(context, true),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
+                              backgroundColor: Colors.teal,
                               minimumSize: const Size.fromHeight(45),
                             ),
                             child: const Text('Voir le reçu'),
@@ -156,13 +160,22 @@ class _ConfirmationInscriptionScreenState
                   url: fullUrl,
                   token: widget.token,
                   paroisseId: widget.paroisseId,
+                  user: widget.user,
                 ),
               ),
             );
           } else {
-            Navigator.of(context).popUntil((route) {
-              return route.settings.name == '/home' || route.isFirst;
-            });
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MainScaffold(
+                  token: widget.token,
+                  user: widget.user,
+                  initialIndex: 3, // ✅ Onglet Catéchèse
+                ),
+              ),
+              (route) => false,
+            );
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -178,6 +191,7 @@ class _ConfirmationInscriptionScreenState
               builder: (_) => ListePaiementsCatecheseScreen(
                 token: widget.token,
                 paroisseId: widget.paroisseId,
+                user: widget.user,
               ),
             ),
           );
@@ -209,6 +223,7 @@ class _ConfirmationInscriptionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true, // ✅ important pour le clavier
       appBar: AppBar(
         title: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -225,7 +240,7 @@ class _ConfirmationInscriptionScreenState
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.green.shade700, Colors.green.shade500],
+              colors: [Colors.teal.shade700, Colors.teal.shade500],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -236,7 +251,7 @@ class _ConfirmationInscriptionScreenState
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.white],
+            colors: [Colors.teal.shade50, Colors.white],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -263,14 +278,14 @@ class _ConfirmationInscriptionScreenState
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      colors: [Colors.teal.shade600, Colors.teal.shade400],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
+                        color: Colors.teal.withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -319,12 +334,12 @@ class _ConfirmationInscriptionScreenState
                       margin: const EdgeInsets.all(12),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade100,
+                        color: Colors.teal.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         Icons.payments,
-                        color: Colors.green.shade700,
+                        color: Colors.teal.shade700,
                         size: 20,
                       ),
                     ),
@@ -338,7 +353,7 @@ class _ConfirmationInscriptionScreenState
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: Colors.green.shade600,
+                        color: Colors.teal.shade600,
                         width: 2,
                       ),
                     ),
@@ -481,14 +496,14 @@ class _ConfirmationInscriptionScreenState
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      colors: [Colors.teal.shade600, Colors.teal.shade400],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.4),
+                        color: Colors.teal.withOpacity(0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -526,6 +541,34 @@ class _ConfirmationInscriptionScreenState
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ElevatedButton.icon(
+          onPressed: _isSubmitting ? null : _submitPaiement,
+          icon: _isSubmitting
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Icon(Icons.check_circle, size: 24),
+          label: Text(
+            _isSubmitting ? 'Traitement...' : 'Payer maintenant',
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(56),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
         ),
       ),

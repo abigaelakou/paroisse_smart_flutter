@@ -219,6 +219,7 @@ class _DateMessePickerState extends State<DateMessePicker> {
                 widget.date ?? DateTime.now().add(const Duration(days: 1)),
             firstDate: DateTime.now(),
             lastDate: DateTime(2100),
+            locale: const Locale('fr', 'FR'),
             builder: (context, child) {
               return Theme(
                 data: Theme.of(context).copyWith(
@@ -272,16 +273,21 @@ class HeureMesseField extends StatelessWidget {
             context: context,
             initialTime: selectedTime ?? TimeOfDay.now(),
             builder: (context, child) {
-              return Theme(
-                data: Theme.of(context).copyWith(
-                  colorScheme: const ColorScheme.light(
-                    primary: Colors.orange,
-                    onPrimary: Colors.white,
-                    surface: Colors.white,
-                    onSurface: Colors.black,
-                  ),
-                ),
-                child: child!,
+              // return Theme(
+              //   data: Theme.of(context).copyWith(
+              //     colorScheme: const ColorScheme.light(
+              //       primary: Colors.orange,
+              //       onPrimary: Colors.white,
+              //       surface: Colors.white,
+              //       onSurface: Colors.black,
+              //     ),
+              //   ),
+              //   child: child!,
+              // );
+              return Localizations.override(
+                context: context,
+                locale: const Locale('fr', 'FR'),
+                child: child,
               );
             },
           );

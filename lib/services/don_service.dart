@@ -8,7 +8,7 @@ import '../models/don.dart';
 
 class DonService {
   static const String baseUrl = 'https://www.paroissesmart.com/api';
-  static const Duration timeoutDuration = Duration(seconds: 10);
+  static const Duration timeoutDuration = Duration(seconds: 20);
   static bool debug = kDebugMode;
 
   /// Vérifie la connexion Internet avant un appel API

@@ -2,32 +2,96 @@ import 'package:flutter/material.dart';
 import '../../../models/demande_messe.dart';
 import 'package:intl/intl.dart';
 
-class DemandeMesseCard extends StatelessWidget {
+class DemandeMesseCard extends StatefulWidget {
   final DemandeMesse demande;
 
   const DemandeMesseCard({super.key, required this.demande});
 
+  @override
+  State<DemandeMesseCard> createState() => _DemandeMesseCardState();
+}
+
+class _DemandeMesseCardState extends State<DemandeMesseCard> {
+  String? _selectedDate;
+  String? _selectedHeure;
+
+  /// ✅ Formatage de la date en français
   String _formatDate(String? date) {
     if (date == null || date.isEmpty) return "Non définie";
     try {
       final dt = DateTime.parse(date);
-      return DateFormat('dd/MM/yyyy').format(dt);
+      return DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(dt);
     } catch (_) {
       return date;
     }
   }
 
+  /// ✅ Formatage de l’heure en français
+  String _formatHeure(String? heure) {
+    if (heure == null || heure.isEmpty) return "Non définie";
+    try {
+      final dt = DateFormat("HH:mm:ss").parse(heure);
+      return DateFormat('HH:mm', 'fr_FR').format(dt);
+    } catch (_) {
+      return heure;
+    }
+  }
+
+  /// ✅ Sélecteur de date
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      locale: const Locale('fr', 'FR'),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
+  }
+
+  /// ✅ Sélecteur d’heure
+  Future<void> _selectHeure(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Localizations.override(
+          context: context,
+          locale: const Locale('fr', 'FR'),
+          child: child,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final now = DateTime.now();
+      final dt = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        picked.hour,
+        picked.minute,
+      );
+      setState(() {
+        _selectedHeure = DateFormat('HH:mm:ss').format(dt);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final date = _formatDate(demande.dateMesse);
-    final heure = demande.heureMesse.isNotEmpty == true
-        ? demande.heureMesse
-        : "Non définie";
-    final lieu = demande.lieuMesse.isNotEmpty == true
-        ? demande.lieuMesse
+    final date = _formatDate(_selectedDate ?? widget.demande.dateMesse);
+    final heure = _formatHeure(_selectedHeure ?? widget.demande.heureMesse);
+    final lieu = widget.demande.lieuMesse.isNotEmpty == true
+        ? widget.demande.lieuMesse
         : "Non défini";
-    final intentions = demande.intentions.isNotEmpty == true
-        ? demande.intentions
+    final intentions = widget.demande.intentions.isNotEmpty == true
+        ? widget.demande.intentions
         : "Aucune intention";
 
     return Container(
@@ -47,123 +111,48 @@ class DemandeMesseCard extends StatelessWidget {
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              // Action au clic si nécessaire
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.deepPurple,
-                              Colors.deepPurple.shade700,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.deepPurple.withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.church,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              demande.typeMesse,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              demande.typeIntention,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade100,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green.shade700,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Validée",
-                              style: TextStyle(
-                                color: Colors.green.shade700,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Divider(height: 1),
-                  const SizedBox(height: 16),
-                  _buildInfoRow(
-                    Icons.calendar_today,
-                    "Date",
-                    "$date à $heure",
-                    Colors.blue,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(Icons.location_on, "Lieu", lieu, Colors.teal),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(
-                    Icons.edit_note,
-                    "Intentions",
-                    intentions,
-                    Colors.indigo,
-                    maxLines: 2,
-                  ),
-                ],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ Champ Date
+            TextFormField(
+              readOnly: true,
+              controller: TextEditingController(text: date),
+              decoration: const InputDecoration(
+                labelText: "Date de la messe",
+                prefixIcon: Icon(Icons.calendar_today, color: Colors.amber),
               ),
+              onTap: () => _selectDate(context),
             ),
-          ),
+            const SizedBox(height: 12),
+
+            // ✅ Champ Heure
+            TextFormField(
+              readOnly: true,
+              controller: TextEditingController(text: heure),
+              decoration: const InputDecoration(
+                labelText: "Heure de la messe",
+                prefixIcon: Icon(Icons.access_time, color: Colors.amber),
+              ),
+              onTap: () => _selectHeure(context),
+            ),
+            const SizedBox(height: 12),
+
+            // ✅ Lieu
+            _buildInfoRow(Icons.location_on, "Lieu", lieu, Colors.teal),
+            const SizedBox(height: 12),
+
+            // ✅ Intentions
+            _buildInfoRow(
+              Icons.edit_note,
+              "Intentions",
+              intentions,
+              Colors.indigo,
+              maxLines: 2,
+            ),
+          ],
         ),
       ),
     );

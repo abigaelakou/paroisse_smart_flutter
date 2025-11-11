@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:paroisse_smart_flutter/navigation/main_scaffold.dart';
+import '../../../models/user.dart';
 
 class DonConfirmationScreen extends StatelessWidget {
   final double montant;
@@ -9,6 +11,7 @@ class DonConfirmationScreen extends StatelessWidget {
   final String transactionId;
   final String token;
   final int paroisseId;
+  final User user;
 
   const DonConfirmationScreen({
     super.key,
@@ -18,6 +21,7 @@ class DonConfirmationScreen extends StatelessWidget {
     required this.transactionId,
     required this.token,
     required this.paroisseId,
+    required this.user,
   });
 
   String _formatMontant(double montant) {
@@ -200,15 +204,15 @@ class DonConfirmationScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.purple.shade50,
+                        color: Colors.amber.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.purple.shade200),
+                        border: Border.all(color: Colors.amber.shade200),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             Icons.info_outline,
-                            color: Colors.purple.shade700,
+                            color: Colors.amber.shade700,
                             size: 24,
                           ),
                           const SizedBox(width: 12),
@@ -217,7 +221,7 @@ class DonConfirmationScreen extends StatelessWidget {
                               "Votre don aide notre paroisse à poursuivre sa mission spirituelle et caritative.",
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.purple.shade900,
+                                color: Colors.amber.shade900,
                                 height: 1.4,
                               ),
                             ),
@@ -253,11 +257,17 @@ class DonConfirmationScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Retourne à l'accueil en préservant la navigation
-                          Navigator.of(context).popUntil((route) {
-                            return route.settings.name == '/home' ||
-                                route.isFirst;
-                          });
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MainScaffold(
+                                token: token,
+                                user: user,
+                                initialIndex: 0, // Onglet Accueil
+                              ),
+                            ),
+                            (route) => false,
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green.shade700,
@@ -292,7 +302,16 @@ class DonConfirmationScreen extends StatelessWidget {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MainScaffold(
+                                token: token,
+                                user: user,
+                                initialIndex: 1, // Onglet Don
+                              ),
+                            ),
+                          );
                         },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.green.shade700,

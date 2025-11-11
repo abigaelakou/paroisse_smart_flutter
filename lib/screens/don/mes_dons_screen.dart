@@ -70,7 +70,7 @@ class _MesDonsScreenState extends State<MesDonsScreen> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.purple.shade700,
+        backgroundColor: Colors.amber.shade700,
         title: const Text(
           "Mes Dons",
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -93,7 +93,7 @@ class _MesDonsScreenState extends State<MesDonsScreen> {
                 children: [
                   CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.purple.shade700,
+                      Colors.amber.shade700,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -137,7 +137,7 @@ class _MesDonsScreenState extends State<MesDonsScreen> {
                       icon: const Icon(Icons.refresh),
                       label: const Text("Réessayer"),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple.shade700,
+                        backgroundColor: Colors.amber.shade700,
                       ),
                     ),
                   ],
@@ -187,14 +187,14 @@ class _MesDonsScreenState extends State<MesDonsScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.purple.shade700, Colors.purple.shade500],
+                    colors: [Colors.amber.shade700, Colors.amber.shade500],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.purple.shade200,
+                      color: Colors.amber.shade200,
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -256,7 +256,7 @@ class _MesDonsScreenState extends State<MesDonsScreen> {
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async => _rafraichir(),
-                  color: Colors.purple.shade700,
+                  color: Colors.amber.shade700,
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: dons.length,

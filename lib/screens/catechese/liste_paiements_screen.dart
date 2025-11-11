@@ -3,15 +3,18 @@ import 'package:intl/intl.dart';
 import '../../../models/paiement_catechese.dart';
 import '../../../services/catechese_service.dart';
 import 'recu_pdf_screen.dart';
+import '../../models/user.dart';
 
 class ListePaiementsCatecheseScreen extends StatefulWidget {
   final String token;
   final int paroisseId;
+  final User user;
 
   const ListePaiementsCatecheseScreen({
     super.key,
     required this.token,
     required this.paroisseId,
+    required this.user,
   });
 
   @override
@@ -62,6 +65,7 @@ class _ListePaiementsCatecheseScreenState
           url: fullUrl,
           token: widget.token,
           paroisseId: widget.paroisseId,
+          user: widget.user,
         ),
       ),
     );
@@ -75,7 +79,7 @@ class _ListePaiementsCatecheseScreenState
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.green.shade700, Colors.green.shade500],
+              colors: [Colors.teal.shade700, Colors.teal.shade500],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -117,7 +121,7 @@ class _ListePaiementsCatecheseScreenState
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.white],
+            colors: [Colors.teal.shade50, Colors.white],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -133,13 +137,13 @@ class _ListePaiementsCatecheseScreenState
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.green.shade50,
+                          color: Colors.teal.shade50,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.receipt_long_outlined,
                           size: 64,
-                          color: Colors.green.shade300,
+                          color: Colors.teal.shade300,
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -198,7 +202,7 @@ class _ListePaiementsCatecheseScreenState
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: statutPayer
-                                  ? [Colors.white, Colors.green.shade50]
+                                  ? [Colors.white, Colors.teal.shade50]
                                   : [Colors.white, Colors.orange.shade50],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -207,7 +211,7 @@ class _ListePaiementsCatecheseScreenState
                             boxShadow: [
                               BoxShadow(
                                 color: statutPayer
-                                    ? Colors.green.withOpacity(0.15)
+                                    ? Colors.teal.withOpacity(0.15)
                                     : Colors.orange.withOpacity(0.15),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
@@ -227,8 +231,8 @@ class _ListePaiementsCatecheseScreenState
                                         gradient: LinearGradient(
                                           colors: statutPayer
                                               ? [
-                                                  Colors.green.shade400,
-                                                  Colors.green.shade600,
+                                                  Colors.teal.shade400,
+                                                  Colors.teal.shade600,
                                                 ]
                                               : [
                                                   Colors.orange.shade400,
@@ -239,7 +243,7 @@ class _ListePaiementsCatecheseScreenState
                                         boxShadow: [
                                           BoxShadow(
                                             color: statutPayer
-                                                ? Colors.green.withOpacity(0.3)
+                                                ? Colors.teal.withOpacity(0.3)
                                                 : Colors.orange.withOpacity(
                                                     0.3,
                                                   ),
@@ -280,8 +284,8 @@ class _ListePaiementsCatecheseScreenState
                                               gradient: LinearGradient(
                                                 colors: statutPayer
                                                     ? [
-                                                        Colors.green.shade600,
-                                                        Colors.green.shade700,
+                                                        Colors.teal.shade600,
+                                                        Colors.teal.shade700,
                                                       ]
                                                     : [
                                                         Colors.orange.shade600,
@@ -293,8 +297,9 @@ class _ListePaiementsCatecheseScreenState
                                               boxShadow: [
                                                 BoxShadow(
                                                   color: statutPayer
-                                                      ? Colors.green
-                                                            .withOpacity(0.3)
+                                                      ? Colors.teal.withOpacity(
+                                                          0.3,
+                                                        )
                                                       : Colors.orange
                                                             .withOpacity(0.3),
                                                   blurRadius: 4,
@@ -348,7 +353,7 @@ class _ListePaiementsCatecheseScreenState
                                       const Divider(height: 16),
                                       _buildInfoRow(
                                         Icons.attach_money,
-                                        Colors.green,
+                                        Colors.teal,
                                         "Montant",
                                         "${p.montant.toStringAsFixed(0)} FCFA",
                                       ),

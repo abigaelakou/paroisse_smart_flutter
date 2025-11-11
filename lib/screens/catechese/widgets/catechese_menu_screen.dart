@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../inscription_catechese_screen.dart';
 import '../liste_paiements_screen.dart';
+import '../../../models/user.dart';
 
 class CatecheseMenuScreen extends StatelessWidget {
   final String token;
   final int paroisseId;
+  final User user;
 
   const CatecheseMenuScreen({
     super.key,
     required this.token,
     required this.paroisseId,
+    required this.user,
   });
 
   @override
@@ -28,7 +31,7 @@ class CatecheseMenuScreen extends StatelessWidget {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.green.shade700, Colors.green.shade500],
+              colors: [Colors.teal.shade700, Colors.teal.shade500],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -39,7 +42,7 @@ class CatecheseMenuScreen extends StatelessWidget {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.white],
+            colors: [Colors.teal.shade50, Colors.white],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -66,14 +69,14 @@ class CatecheseMenuScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      colors: [Colors.teal.shade600, Colors.teal.shade400],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
+                        color: Colors.teal.withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -167,6 +170,7 @@ class CatecheseMenuScreen extends StatelessWidget {
                         builder: (_) => ListePaiementsCatecheseScreen(
                           token: token,
                           paroisseId: paroisseId,
+                          user: user,
                         ),
                       ),
                     );

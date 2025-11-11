@@ -119,14 +119,14 @@ class _InscriptionCatecheseFormState extends State<InscriptionCatecheseForm> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 CircularProgressIndicator(
-                  color: Colors.green.shade600,
+                  color: Colors.teal.shade600,
                   strokeWidth: 3,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Chargement des données...',
                   style: TextStyle(
-                    color: Colors.green.shade700,
+                    color: Colors.teal.shade700,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -355,14 +355,14 @@ class _InscriptionCatecheseFormState extends State<InscriptionCatecheseForm> {
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      colors: [Colors.teal.shade600, Colors.teal.shade400],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.4),
+                        color: Colors.teal.withOpacity(0.4),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),

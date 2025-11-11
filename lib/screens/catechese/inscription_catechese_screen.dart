@@ -30,7 +30,7 @@ class InscriptionCatecheseScreen extends StatelessWidget {
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.green.shade700, Colors.green.shade500],
+              colors: [Colors.teal.shade700, Colors.teal.shade500],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -41,7 +41,7 @@ class InscriptionCatecheseScreen extends StatelessWidget {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.green.shade50, Colors.white],
+            colors: [Colors.teal.shade50, Colors.white],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -68,14 +68,14 @@ class InscriptionCatecheseScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.green.shade600, Colors.green.shade400],
+                      colors: [Colors.teal.shade600, Colors.teal.shade400],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
+                        color: Colors.teal.withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),

@@ -396,12 +396,12 @@ class _DemandeMesseFormState extends State<DemandeMesseForm>
                 onChanged: (val) => setState(() => _typeIntentionId = val),
               ),
               const SizedBox(height: 16),
-              DateMessePicker(
+              DateMessePickerFrench(
                 date: _dateMesse,
                 onDateSelected: (val) => setState(() => _dateMesse = val),
               ),
               const SizedBox(height: 16),
-              HeureMesseField(
+              HeureMesseFieldFrench(
                 selectedTime: _heureMesse,
                 onChanged: (val) => setState(() => _heureMesse = val),
               ),
@@ -462,7 +462,7 @@ class _DemandeMesseFormState extends State<DemandeMesseForm>
                 ),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: const Color.fromARGB(0, 18, 14, 207),
                     shadowColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'routes/app_routes.dart';
 import 'services/auth_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'navigation/main_scaffold.dart';
 import 'models/user.dart';
-import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +23,7 @@ void main() async {
     );
   }
 
-  /// Création d’un utilisateur minimal basé sur les données locales
+  /// Création d'un utilisateur minimal basé sur les données locales
   final user = token != null
       ? User(
           id: 0, // valeur temporaire (sera écrasée après fetchMe)
@@ -48,6 +49,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Paroisse Smart',
       debugShowCheckedModeBanner: false,
+
+      // ✅ Configuration de la localisation française
+      locale: const Locale('fr', 'FR'),
+      supportedLocales: const [Locale('fr', 'FR'), Locale('en', 'US')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
       theme: ThemeData(primarySwatch: Colors.green),
       home: initialToken != null && initialUser != null
           ? MainScaffold(token: initialToken!, user: initialUser!)

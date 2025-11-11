@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// ------------------ Type de messe ------------------
 class TypeMesseDropdown extends StatelessWidget {
@@ -131,38 +132,36 @@ class TypeIntentionDropdown extends StatelessWidget {
 }
 
 /// ------------------ Date de la messe ------------------
-class DateMessePicker extends StatefulWidget {
+class DateMessePickerFrench extends StatefulWidget {
   final DateTime? date;
   final ValueChanged<DateTime> onDateSelected;
 
-  const DateMessePicker({
+  const DateMessePickerFrench({
     super.key,
     required this.date,
     required this.onDateSelected,
   });
 
   @override
-  State<DateMessePicker> createState() => _DateMessePickerState();
+  State<DateMessePickerFrench> createState() => _DateMessePickerFrenchState();
 }
 
-class _DateMessePickerState extends State<DateMessePicker> {
+class _DateMessePickerFrenchState extends State<DateMessePickerFrench> {
   late TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: widget.date != null
-          ? widget.date!.toIso8601String().split('T')[0]
-          : '',
+      text: widget.date != null ? _formatDateFrench(widget.date!) : '',
     );
   }
 
   @override
-  void didUpdateWidget(covariant DateMessePicker oldWidget) {
+  void didUpdateWidget(covariant DateMessePickerFrench oldWidget) {
     super.didUpdateWidget(oldWidget);
     _controller.text = widget.date != null
-        ? widget.date!.toIso8601String().split('T')[0]
+        ? _formatDateFrench(widget.date!)
         : '';
   }
 
@@ -170,6 +169,11 @@ class _DateMessePickerState extends State<DateMessePicker> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  String _formatDateFrench(DateTime date) {
+    final intl = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
+    return intl.format(date);
   }
 
   @override
@@ -220,6 +224,14 @@ class _DateMessePickerState extends State<DateMessePicker> {
             firstDate: DateTime.now(),
             lastDate: DateTime(2100),
             locale: const Locale('fr', 'FR'),
+            // ✅ Personnalisation complète en français
+            helpText: 'SÉLECTIONNER LA DATE',
+            cancelText: 'Annuler',
+            confirmText: 'OK',
+            fieldLabelText: 'Date',
+            fieldHintText: 'jj/mm/aaaa',
+            errorFormatText: 'Format invalide',
+            errorInvalidText: 'Date invalide',
             builder: (context, child) {
               return Theme(
                 data: Theme.of(context).copyWith(
@@ -228,6 +240,9 @@ class _DateMessePickerState extends State<DateMessePicker> {
                     onPrimary: Colors.white,
                     surface: Colors.white,
                     onSurface: Colors.black,
+                  ),
+                  textButtonTheme: TextButtonThemeData(
+                    style: TextButton.styleFrom(foregroundColor: Colors.blue),
                   ),
                 ),
                 child: child!,
@@ -244,15 +259,21 @@ class _DateMessePickerState extends State<DateMessePicker> {
 }
 
 /// ------------------ Heure de la messe ------------------
-class HeureMesseField extends StatelessWidget {
+class HeureMesseFieldFrench extends StatelessWidget {
   final TimeOfDay? selectedTime;
   final ValueChanged<TimeOfDay?> onChanged;
 
-  const HeureMesseField({
+  const HeureMesseFieldFrench({
     super.key,
     this.selectedTime,
     required this.onChanged,
   });
+
+  String _formatTimeFrench(TimeOfDay time) {
+    final heures = time.hour.toString().padLeft(2, '0');
+    final minutes = time.minute.toString().padLeft(2, '0');
+    return '$heures:$minutes';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -272,22 +293,38 @@ class HeureMesseField extends StatelessWidget {
           final picked = await showTimePicker(
             context: context,
             initialTime: selectedTime ?? TimeOfDay.now(),
+            // ✅ Configuration complète en français
+            helpText: 'SÉLECTIONNER L\'HEURE',
+            cancelText: 'Annuler',
+            confirmText: 'OK',
+            hourLabelText: 'Heure',
+            minuteLabelText: 'Minutes',
+            errorInvalidText: 'Heure invalide',
             builder: (context, child) {
-              // return Theme(
-              //   data: Theme.of(context).copyWith(
-              //     colorScheme: const ColorScheme.light(
-              //       primary: Colors.orange,
-              //       onPrimary: Colors.white,
-              //       surface: Colors.white,
-              //       onSurface: Colors.black,
-              //     ),
-              //   ),
-              //   child: child!,
-              // );
               return Localizations.override(
                 context: context,
                 locale: const Locale('fr', 'FR'),
-                child: child,
+                child: MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(alwaysUse24HourFormat: true),
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.light(
+                        primary: Colors.orange,
+                        onPrimary: Colors.white,
+                        surface: Colors.white,
+                        onSurface: Colors.black,
+                      ),
+                      textButtonTheme: TextButtonThemeData(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.orange,
+                        ),
+                      ),
+                    ),
+                    child: child!,
+                  ),
+                ),
               );
             },
           );
@@ -318,7 +355,7 @@ class HeureMesseField extends StatelessWidget {
           ),
           child: Text(
             selectedTime != null
-                ? selectedTime!.format(context)
+                ? _formatTimeFrench(selectedTime!)
                 : "Appuyez pour choisir l'heure",
             style: TextStyle(
               color: selectedTime != null ? Colors.black87 : Colors.grey[600],

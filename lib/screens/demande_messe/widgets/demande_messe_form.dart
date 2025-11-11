@@ -356,12 +356,12 @@ class _DemandeMesseFormState extends State<DemandeMesseForm>
               onChanged: (val) => setState(() => _typeIntentionId = val),
             ),
             const SizedBox(height: 10),
-            DateMessePicker(
+            DateMessePickerFrench(
               date: _dateMesse,
               onDateSelected: (val) => setState(() => _dateMesse = val),
             ),
             const SizedBox(height: 10),
-            HeureMesseField(
+            HeureMesseFieldFrench(
               selectedTime: _heureMesse,
               onChanged: (val) => setState(() => _heureMesse = val),
             ),

@@ -10,13 +10,18 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # ✅ Ajout de flutter_localizations pour le support du français
+  flutter_localizations:
+    sdk: flutter
+  
   dio: ^5.4.0
   flutter_riverpod: ^2.5.1
   flutter_dotenv: ^5.1.0
   google_fonts: ^6.1.0
   cupertino_icons: ^1.0.8
   carousel_slider: ^5.1.1
-  intl: ^0.20.2
+  intl: ^0.20.2  
   url_launcher: ^6.2.5
   dropdown_search: ^5.0.6
   shared_preferences: ^2.0.15
@@ -26,13 +31,15 @@ dependencies:
   open_file: ^3.3.2
   lottie: ^3.1.0
   fluttertoast: ^8.2.1
-
+  
+  
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
+  
 
 flutter_icons:
   android: true

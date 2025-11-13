@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter/services.dart';
 import '../../../../models/catechumene.dart';
 import '../../../../models/niveau.dart';
 import '../../../../models/session.dart';
@@ -23,6 +24,7 @@ class InscriptionCatecheseForm extends StatefulWidget {
 class _InscriptionCatecheseFormState extends State<InscriptionCatecheseForm> {
   final _formKey = GlobalKey<FormState>();
   final _anneeController = TextEditingController();
+
   DateTime? _selectedDate;
 
   List<Catechumene> _catechumenes = [];
@@ -37,16 +39,28 @@ class _InscriptionCatecheseFormState extends State<InscriptionCatecheseForm> {
 
   late CatecheseService _service;
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _service = CatecheseService(token: widget.token);
+  //   _loadOptions();
+  // }
   @override
   void initState() {
     super.initState();
     _service = CatecheseService(token: widget.token);
     _loadOptions();
+
+    // ✅ Pré-remplir automatiquement l'année catéchétique
+    final currentYear = DateTime.now().year;
+    _anneeController.text = "$currentYear-${currentYear + 1}";
   }
 
   @override
   void dispose() {
-    _anneeController.dispose();
+    // _anneeController.dispose();
+    final currentYear = DateTime.now().year;
+    _anneeController.text = "$currentYear-${currentYear + 1}";
     super.dispose();
   }
 
@@ -263,12 +277,11 @@ class _InscriptionCatecheseFormState extends State<InscriptionCatecheseForm> {
                   title: 'Année et date',
                   color: Colors.orange.shade600,
                 ),
-                const SizedBox(height: 12),
                 TextFormField(
                   controller: _anneeController,
                   decoration: InputDecoration(
                     labelText: "Année catéchétique",
-                    hintText: "Ex: 2024-2025",
+                    hintText: "Ex: 2025-2026",
                     prefixIcon: Icon(
                       Icons.date_range,
                       color: Colors.orange.shade600,
@@ -291,8 +304,44 @@ class _InscriptionCatecheseFormState extends State<InscriptionCatecheseForm> {
                       ),
                     ),
                   ),
-                  validator: (val) => val!.isEmpty ? "Champ requis" : null,
+                  inputFormatters: [
+                    // 🔒 Bloque tout sauf chiffres et tiret
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9-]')),
+                    // 🔒 Limite à 9 caractères (ex: 2025-2026)
+                    LengthLimitingTextInputFormatter(9),
+                  ],
+                  validator: (val) {
+                    if (val == null || val.isEmpty) {
+                      return "Champ requis";
+                    }
+
+                    // Vérifier le format : 4 chiffres - 4 chiffres
+                    final regex = RegExp(r'^\d{4}-\d{4}$');
+                    if (!regex.hasMatch(val)) {
+                      return "Format invalide. Ex: 2025-2026";
+                    }
+
+                    // Extraire les années
+                    final parts = val.split('-');
+                    final anneeDebut = int.tryParse(parts[0]);
+                    final anneeFin = int.tryParse(parts[1]);
+
+                    if (anneeDebut == null || anneeFin == null) {
+                      return "Année invalide";
+                    }
+
+                    // Année courante et suivante
+                    final currentYear = DateTime.now().year;
+                    final nextYear = currentYear + 1;
+
+                    if (anneeDebut != currentYear || anneeFin != nextYear) {
+                      return "L'année catéchétique doit être $currentYear-$nextYear";
+                    }
+
+                    return null; // ✅ Tout est bon
+                  },
                 ),
+
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(

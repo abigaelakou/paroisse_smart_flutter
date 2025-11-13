@@ -24,10 +24,12 @@ class ProfileService {
       if (kDebugMode) {
         debugPrint('Erreur API fetchUser: ${e.response?.data ?? e.message}');
       }
+      rethrow;
     } catch (e, stack) {
       if (kDebugMode) {
         debugPrint('Erreur inattendue fetchUser: $e\n$stack');
       }
+      rethrow;
     }
     return null;
   }
@@ -75,12 +77,13 @@ class ProfileService {
           'Erreur API changePassword: ${e.response?.data ?? e.message}',
         );
       }
-      return 'Erreur lors du changement de mot de passe';
+      throw e.response?.data['message'] ??
+          'Erreur lors du changement de mot de passe';
     } catch (e, stack) {
       if (kDebugMode) {
         debugPrint('Erreur inattendue changePassword: $e\n$stack');
       }
-      return 'Erreur inconnue';
+      rethrow;
     }
   }
 
@@ -92,6 +95,63 @@ class ProfileService {
       if (kDebugMode) {
         debugPrint('Erreur mise à jour token Expo: $e\n$stack');
       }
+    }
+  }
+
+  /// Met à jour les informations du profil utilisateur
+  Future<String> updateProfile({
+    required String name,
+    required String email,
+    required String contact,
+    required String sexe,
+    required String situation,
+    required String dateNaissance,
+    required List<String> sacrements,
+    required int paroisseId,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '/update-profile',
+        data: {
+          'name': name,
+          'email': email,
+          'contact': contact,
+          'sexe': sexe,
+          'situation_matrimoniale': situation,
+          'date_naiss': dateNaissance,
+          'sacrement_recu': sacrements,
+          'paroisse_id': paroisseId,
+        },
+      );
+
+      if (kDebugMode) {
+        debugPrint('✅ updateProfile: ${response.data}');
+      }
+
+      return response.data['message'] ?? 'Profil mis à jour avec succès';
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint(
+          '❌ Erreur API updateProfile: ${e.response?.data ?? e.message}',
+        );
+      }
+
+      // Gestion des erreurs spécifiques
+      if (e.response?.statusCode == 422) {
+        throw e.response?.data['message'] ??
+            'Données de validation incorrectes';
+      } else if (e.response?.statusCode == 409) {
+        throw e.response?.data['message'] ??
+            'Conflit: email ou contact déjà utilisé';
+      }
+
+      throw e.response?.data['message'] ??
+          'Erreur lors de la mise à jour du profil';
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('Erreur inattendue updateProfile: $e\n$stack');
+      }
+      rethrow;
     }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter/services.dart';
 import '../../services/paroisse_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/formatters.dart';
@@ -190,14 +191,23 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         controller: _contactController,
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(labelText: 'Contact'),
+                        inputFormatters: [
+                          // 🔒 Autorise uniquement les chiffres
+                          FilteringTextInputFormatter.digitsOnly,
+                          // 🔒 Limite la longueur entre 8 et 15 caractères
+                          LengthLimitingTextInputFormatter(15),
+                        ],
                         validator: (value) {
-                          if (value == null || value.isEmpty)
+                          if (value == null || value.isEmpty) {
                             return 'Veuillez entrer votre contact';
-                          if (!RegExp(r'^\d{8,15}$').hasMatch(value))
-                            return 'Contact invalide';
+                          }
+                          if (value.length < 8 || value.length > 15) {
+                            return 'Le contact doit contenir entre 8 et 15 chiffres';
+                          }
                           return null;
                         },
                       ),
+
                       const SizedBox(height: 16),
 
                       // Sexe

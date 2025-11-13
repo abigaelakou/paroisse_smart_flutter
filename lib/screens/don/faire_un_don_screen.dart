@@ -34,9 +34,17 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
   final List<Map<String, dynamic>> _modesPaiement = [
     {'label': 'Wave', 'icon': Icons.water_drop, 'color': Colors.blue},
     {'label': 'Orange', 'icon': Icons.phone_android, 'color': Colors.orange},
-    {'label': 'MTN', 'icon': Icons.signal_cellular_alt, 'color': Colors.yellow},
+    {
+      'label': 'MTN',
+      'icon': Icons.signal_cellular_alt,
+      'color': const Color.fromARGB(255, 239, 228, 13),
+    },
     {'label': 'Moov', 'icon': Icons.phone_iphone, 'color': Colors.red},
-    {'label': 'Espèces', 'icon': Icons.payments, 'color': Colors.green},
+    {
+      'label': 'VISA',
+      'icon': Icons.payments,
+      'color': const Color.fromARGB(255, 4, 153, 246),
+    },
   ];
 
   final Map<String, String> _modesPaiementMap = {
@@ -44,7 +52,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
     'Orange': 'orange',
     'MTN': 'mtn',
     'Wave': 'wave',
-    'Espèces': 'especes',
+    'VISA': 'visa',
   };
 
   List<Map<String, dynamic>> _typesDon = [];
@@ -252,8 +260,7 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
+          TextButton.icon(
             onPressed: () {
               Navigator.push(
                 context,
@@ -262,7 +269,15 @@ class _FaireUnDonScreenState extends State<FaireUnDonScreen> {
                 ),
               );
             },
-            tooltip: "Historique",
+            icon: const Icon(Icons.receipt_long, color: Colors.white, size: 24),
+            label: const Text(
+              "Mes dons",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

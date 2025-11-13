@@ -36,7 +36,8 @@ class Don {
       paymentStatus: json['payment_status'],
       idTypeDon: json['id_type_don'],
       transactionId: json['transaction_id'],
-      anonyme: json['anonyme'] != null && json['anonyme'] == 1,
+      // anonyme: json['anonyme'] != null && json['anonyme'] == 1,
+      anonyme: json['anonyme'] == 1 || json['anonyme'] == true,
       paroisseId: json['paroisse_id'],
     );
   }

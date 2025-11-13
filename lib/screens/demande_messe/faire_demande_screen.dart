@@ -460,15 +460,27 @@ class _DemandeMesseFormState extends State<DemandeMesseForm>
                     ),
                   ],
                 ),
+                // child: ElevatedButton(
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor: const Color.fromARGB(0, 18, 14, 207),
+                //     shadowColor: Colors.transparent,
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(16),
+                //     ),
+                //   ),
                 child: ElevatedButton(
+                  onPressed: _isLoading ? null : _soumettreDemande,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(0, 18, 14, 207),
-                    shadowColor: Colors.transparent,
+                    backgroundColor: Colors.teal, // 🔥 couleur de fond
+                    foregroundColor: Colors.white, // 🔥 texte et icône en blanc
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _isLoading ? null : _soumettreDemande,
                   child: _isLoading
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -495,19 +507,25 @@ class _DemandeMesseFormState extends State<DemandeMesseForm>
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: const [
-                            Icon(Icons.send_rounded, size: 24),
+                            Icon(
+                              Icons.send_rounded,
+                              size: 24,
+                              color: Colors.white,
+                            ), // ✅ icône blanche
                             SizedBox(width: 12),
                             Text(
                               "Soumettre la demande",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white, // ✅ texte blanc
                               ),
                             ),
                           ],
                         ),
                 ),
               ),
+              // ),
               const SizedBox(height: 20),
             ],
           ),

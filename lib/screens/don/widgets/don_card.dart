@@ -71,7 +71,7 @@ class DonCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // Afficher les détails du don dans un dialog
+            // Dialog enrichi
             showDialog(
               context: context,
               builder: (context) => Dialog(
@@ -121,6 +121,25 @@ class DonCard extends StatelessWidget {
                               ],
                             ),
                           ),
+                          if (don.anonyme)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                "Anonyme",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => Navigator.pop(context),
@@ -140,6 +159,21 @@ class DonCard extends StatelessWidget {
                         icon: Icons.calendar_today,
                         label: "Date du don",
                         value: _formatDate(don.dateDon),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        icon: Icons.description,
+                        label: "Description",
+                        value: don.description?.isNotEmpty == true
+                            ? don.description!
+                            : "Sans description",
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDetailRow(
+                        icon: Icons.person_off,
+                        label: "Anonyme",
+                        value: don.anonyme ? "Oui" : "Non",
+                        valueColor: don.anonyme ? Colors.grey : Colors.black87,
                       ),
                       const SizedBox(height: 12),
                       _buildDetailRow(
@@ -187,9 +221,7 @@ class DonCard extends StatelessWidget {
                     size: 28,
                   ),
                 ),
-
                 const SizedBox(width: 16),
-
                 // Contenu principal
                 Expanded(
                   child: Column(
@@ -203,9 +235,7 @@ class DonCard extends StatelessWidget {
                           fontSize: 18,
                         ),
                       ),
-
                       const SizedBox(height: 6),
-
                       // Mode de paiement
                       Row(
                         children: [
@@ -224,9 +254,7 @@ class DonCard extends StatelessWidget {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 4),
-
                       // Date
                       Row(
                         children: [
@@ -245,12 +273,46 @@ class DonCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      // Description courte (optionnelle)
+                      if (don.description?.isNotEmpty == true) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          don.description!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                      // Badge Anonyme
+                      if (don.anonyme)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              "Anonyme",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-
                 const SizedBox(width: 12),
-
                 // Statut à droite
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,

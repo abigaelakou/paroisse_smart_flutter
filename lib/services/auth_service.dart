@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:paroisse_smart_flutter/models/paroisse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
@@ -21,6 +22,7 @@ class AuthService {
           headers: {'Accept': 'application/json'},
           receiveTimeout: timeoutDuration,
           connectTimeout: timeoutDuration,
+          sendTimeout: timeoutDuration,
         ),
       );
   static bool debug = kDebugMode;
@@ -48,6 +50,24 @@ class AuthService {
       throw 'Erreur login : ${e.response?.data['message'] ?? e.message}';
     } catch (e) {
       throw 'Erreur inattendue login : $e';
+    }
+  }
+
+  // ---------------- FORGOT PASSWORD ---------------- //
+  Future<String> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '/forgot_password',
+        data: {'email': email},
+      );
+
+      _logResponse('forgotPassword', response);
+
+      return response.data['message'] ?? 'Lien envoyé si l\'email est valide.';
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Erreur réseau : ${e.message}';
+    } catch (e) {
+      throw 'Erreur inattendue forgotPassword : $e';
     }
   }
 
@@ -136,6 +156,7 @@ class AuthService {
     await prefs.setString(_userNameKey, user.name);
     await prefs.setString(_paroisseNomKey, user.paroisseNom ?? '');
     await prefs.setInt(_paroisseIdKey, user.paroisseId);
+    await prefs.setInt('user_id', user.id);
   }
 
   Future<String?> getUserName() async =>
@@ -182,5 +203,24 @@ class AuthService {
     }
   }
 
-  static Future getUserId() async {}
+  static Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('user_id');
+  }
+
+  Future<List<Paroisse>> fetchParoisses() async {
+    try {
+      final response = await _dio.get('/paroisses-actives');
+      if (response.statusCode == 200) {
+        final data = response.data as List;
+        return data.map((json) => Paroisse.fromJson(json)).toList();
+      } else {
+        throw Exception('Erreur lors du chargement des paroisses');
+      }
+    } on DioException catch (e) {
+      throw 'Erreur API paroisses : ${e.response?.data ?? e.message}';
+    } catch (e) {
+      throw 'Erreur inattendue : $e';
+    }
+  }
 }

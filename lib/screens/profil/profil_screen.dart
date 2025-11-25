@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'package:paroisse_smart_flutter/models/paroisse.dart' as models;
 
 import '../../models/user.dart';
-import '../../models/paroisse.dart' as models;
+import '../../models/paroisse.dart';
 import '../../services/profile_service.dart';
 import '../../services/paroisse_service.dart';
 import 'change_password_screen.dart';
@@ -146,6 +147,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final nameController = TextEditingController(text: _user!.name);
+    final lieuHabitationController = TextEditingController(
+      text: _user!.lieuHabitation,
+    );
     final emailController = TextEditingController(text: _user!.email);
     final contactController = TextEditingController(text: _user!.contact ?? "");
     final dateNaissController = TextEditingController(
@@ -159,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     List<String> sacrements = List.from(_user!.sacrements);
 
     // Trouver la paroisse actuelle dans la liste
-    Paroisse? selectedParoisse = _paroisses.firstWhere(
+    models.Paroisse? selectedParoisse = _paroisses.firstWhere(
       (p) => p.id == _user!.paroisseId,
       orElse: () => _paroisses.first,
     );
@@ -245,7 +249,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-
+                  // Lieu d'habitation
+                  TextFormField(
+                    controller: lieuHabitationController,
+                    inputFormatters: [UpperCaseTextFormatter()],
+                    decoration: const InputDecoration(
+                      labelText: "Lieu d'habitation",
+                      prefixIcon: Icon(Icons.location_on),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Veuillez entrer votre lieu d\'habitation'
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
                   // Sexe
                   DropdownButtonFormField<String>(
                     value: sexe,
@@ -369,7 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: EdgeInsets.symmetric(vertical: 16),
                           child: CircularProgressIndicator(),
                         )
-                      : DropdownSearch<Paroisse>(
+                      : DropdownSearch<models.Paroisse>(
                           items: _paroisses,
                           selectedItem: selectedParoisse,
                           itemAsString: (paroisse) => paroisse.nom,
@@ -421,6 +439,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     name: nameController.text.trim(),
                     email: emailController.text.trim(),
                     contact: contactController.text.trim(),
+                    lieuHabitation: lieuHabitationController.text.trim(),
                     sexe: sexe ?? "",
                     situation: situation ?? "",
                     dateNaissance: dateNaissController.text.trim(),

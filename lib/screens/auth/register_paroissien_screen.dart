@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/services.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import '../../services/pays_service.dart';
+import '../../services/diocese_service.dart';
 import '../../services/paroisse_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/formatters.dart';
+import '../../models/pays.dart';
+import '../../models/diocese.dart';
+import '../../models/paroisse.dart';
 
 class RegisterParoissienScreen extends StatefulWidget {
   const RegisterParoissienScreen({Key? key}) : super(key: key);
@@ -15,38 +20,111 @@ class RegisterParoissienScreen extends StatefulWidget {
 
 class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _contactController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
   final _dateNaissController = TextEditingController();
+  final _lieuHabitationController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
   String? _selectedSexe;
   String? _selectedSituation;
   List<String> _sacrementsRecus = [];
-  Paroisse? _selectedParoisse;
-  bool _isLoading = false;
-  List<Paroisse> _paroisses = [];
 
+  Pays? _selectedPays;
+  Diocese? _selectedDiocese;
+  Paroisse? _selectedParoisse;
+
+  bool _isLoading = false;
+  bool _isLoadingDioceses = false;
+  bool _isLoadingParoisses = false;
+
+  List<Pays> _paysList = [];
+  List<Diocese> _diocesesList = [];
+  List<Paroisse> _paroissesList = [];
+
+  final PaysService _paysService = PaysService();
+  final DioceseService _dioceseService = DioceseService();
   final ParoisseService _paroisseService = ParoisseService();
   final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
-    _loadParoisses();
+    _loadPays();
   }
 
-  Future<void> _loadParoisses() async {
+  Future<void> _loadPays() async {
+    try {
+      final pays = await _paysService.fetchPays();
+      if (!mounted) return;
+      setState(() => _paysList = pays);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur chargement pays: $e'),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadDioceses(int paysId) async {
+    setState(() {
+      _isLoadingDioceses = true;
+      _diocesesList = [];
+      _selectedDiocese = null;
+      _paroissesList = [];
+      _selectedParoisse = null;
+    });
+    try {
+      final dioceses = await _dioceseService.fetchDiocesesByPays(paysId);
+      if (!mounted) return;
+      setState(() {
+        _diocesesList = dioceses;
+        _isLoadingDioceses = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingDioceses = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur chargement diocèses: $e'),
+          backgroundColor: Colors.red.shade400,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loadParoisses(int dioceseId) async {
+    setState(() {
+      _isLoadingParoisses = true;
+      _paroissesList = [];
+      _selectedParoisse = null;
+    });
     try {
       final paroisses = await _paroisseService.fetchParoissesActives();
-      setState(() => _paroisses = paroisses);
+      if (!mounted) return;
+      setState(() {
+        _paroissesList = paroisses
+            .where((p) => p.dioceseId == dioceseId)
+            .toList();
+        _isLoadingParoisses = false;
+      });
     } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingParoisses = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur chargement paroisses: $e')),
+        SnackBar(
+          content: Text('Erreur chargement paroisses: $e'),
+          backgroundColor: Colors.red.shade400,
+        ),
       );
     }
   }
@@ -76,6 +154,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
         email: _emailController.text.trim(),
         contact: _contactController.text.trim(),
         password: _passwordController.text,
+        lieuHabitation: _lieuHabitationController.text,
         passwordConfirmation: _passwordConfirmController.text,
         paroisseId: _selectedParoisse!.id,
         sexe: _selectedSexe!,
@@ -84,22 +163,41 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
         sacrementsRecus: _sacrementsRecus,
       );
 
+      if (!mounted) return;
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Inscription réussie ! Veuillez vous connecter.'),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text('Inscription réussie ! Veuillez vous connecter.'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
           ),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de l\'inscription')),
+          SnackBar(
+            content: const Text('Erreur lors de l\'inscription'),
+            backgroundColor: Colors.red.shade600,
+          ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -113,6 +211,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
     _passwordController.dispose();
     _passwordConfirmController.dispose();
     _dateNaissController.dispose();
+    _lieuHabitationController.dispose();
     super.dispose();
   }
 
@@ -128,7 +227,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: _paroisses.isEmpty
+          child: _paysList.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : Form(
                   key: _formKey,
@@ -158,11 +257,10 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       // Nom complet
                       TextFormField(
                         controller: _nameController,
-                        inputFormatters: [
-                          UpperCaseTextFormatter(), // ✅ transforme en majuscule
-                        ],
+                        inputFormatters: [UpperCaseTextFormatter()],
                         decoration: const InputDecoration(
                           labelText: 'Nom et Prénom(s) complet',
+                          prefixIcon: Icon(Icons.person),
                         ),
                         validator: (value) => value == null || value.isEmpty
                             ? 'Veuillez entrer votre nom'
@@ -174,7 +272,10 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(labelText: 'Email'),
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty)
                             return 'Veuillez entrer votre email';
@@ -190,29 +291,42 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       TextFormField(
                         controller: _contactController,
                         keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(labelText: 'Contact'),
+                        decoration: const InputDecoration(
+                          labelText: 'Contact',
+                          prefixIcon: Icon(Icons.phone),
+                        ),
                         inputFormatters: [
-                          // 🔒 Autorise uniquement les chiffres
                           FilteringTextInputFormatter.digitsOnly,
-                          // 🔒 Limite la longueur entre 8 et 15 caractères
                           LengthLimitingTextInputFormatter(15),
                         ],
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
+                          if (value == null || value.isEmpty)
                             return 'Veuillez entrer votre contact';
-                          }
-                          if (value.length < 8 || value.length > 15) {
+                          if (value.length < 8 || value.length > 15)
                             return 'Le contact doit contenir entre 8 et 15 chiffres';
-                          }
                           return null;
                         },
                       ),
-
                       const SizedBox(height: 16),
-
+                      // Lieu d'habitation
+                      TextFormField(
+                        controller: _lieuHabitationController,
+                        inputFormatters: [UpperCaseTextFormatter()],
+                        decoration: const InputDecoration(
+                          labelText: 'Lieu d\'Habitation',
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Veuillez entrer votre lieu de résidence'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
                       // Sexe
                       DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(labelText: 'Sexe'),
+                        decoration: const InputDecoration(
+                          labelText: 'Sexe',
+                          prefixIcon: Icon(Icons.wc),
+                        ),
                         value: _selectedSexe,
                         items: ['Masculin', 'Féminin']
                             .map(
@@ -231,6 +345,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       DropdownButtonFormField<String>(
                         decoration: const InputDecoration(
                           labelText: 'Situation matrimoniale',
+                          prefixIcon: Icon(Icons.favorite),
                         ),
                         value: _selectedSituation,
                         items:
@@ -260,6 +375,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         controller: _dateNaissController,
                         decoration: const InputDecoration(
                           labelText: 'Date de naissance (YYYY-MM-DD)',
+                          prefixIcon: Icon(Icons.cake),
                         ),
                         readOnly: true,
                         onTap: () async {
@@ -286,6 +402,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       InputDecorator(
                         decoration: const InputDecoration(
                           labelText: 'Sacrements reçus',
+                          prefixIcon: Icon(Icons.fact_check),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,32 +434,100 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Paroisse
-                      DropdownSearch<Paroisse>(
-                        items: _paroisses,
-                        selectedItem: _selectedParoisse,
-                        itemAsString: (paroisse) => paroisse.nom,
-                        onChanged: (paroisse) =>
-                            setState(() => _selectedParoisse = paroisse),
+                      // Pays
+                      DropdownSearch<Pays>(
+                        items: _paysList,
+                        selectedItem: _selectedPays,
+                        itemAsString: (p) => p.nom,
+                        onChanged: (p) {
+                          setState(() => _selectedPays = p);
+                          if (p != null) _loadDioceses(p.id);
+                        },
                         dropdownDecoratorProps: const DropDownDecoratorProps(
                           dropdownSearchDecoration: InputDecoration(
-                            labelText: 'Paroisse',
+                            labelText: 'Pays',
+                            prefixIcon: Icon(Icons.flag),
                             border: OutlineInputBorder(),
                           ),
                         ),
-                        validator: (value) => value == null
-                            ? 'Veuillez sélectionner une paroisse'
-                            : null,
                         popupProps: const PopupProps.menu(
                           showSearchBox: true,
                           searchFieldProps: TextFieldProps(
                             decoration: InputDecoration(
-                              hintText: 'Rechercher une paroisse...',
+                              hintText: 'Rechercher un pays...',
                             ),
                           ),
                         ),
+                        validator: (value) => value == null
+                            ? 'Veuillez sélectionner un pays'
+                            : null,
                       ),
                       const SizedBox(height: 16),
+
+                      // Diocèse
+                      _isLoadingDioceses
+                          ? const LinearProgressIndicator()
+                          : DropdownSearch<Diocese>(
+                              items: _diocesesList,
+                              selectedItem: _selectedDiocese,
+                              itemAsString: (d) => d.nom,
+                              onChanged: (d) {
+                                setState(() => _selectedDiocese = d);
+                                if (d != null) _loadParoisses(d.id);
+                              },
+                              dropdownDecoratorProps:
+                                  const DropDownDecoratorProps(
+                                    dropdownSearchDecoration: InputDecoration(
+                                      labelText: 'Diocèse',
+                                      prefixIcon: Icon(Icons.location_city),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                searchFieldProps: TextFieldProps(
+                                  decoration: InputDecoration(
+                                    hintText: 'Rechercher un diocèse...',
+                                  ),
+                                ),
+                              ),
+                              validator: (value) => value == null
+                                  ? 'Veuillez sélectionner un diocèse'
+                                  : null,
+                            ),
+                      const SizedBox(height: 16),
+
+                      // Paroisse
+                      _isLoadingParoisses
+                          ? const LinearProgressIndicator()
+                          : DropdownSearch<Paroisse>(
+                              items: _paroissesList,
+                              selectedItem: _selectedParoisse,
+                              itemAsString: (p) => p.nom,
+                              onChanged: (p) =>
+                                  setState(() => _selectedParoisse = p),
+                              dropdownDecoratorProps:
+                                  const DropDownDecoratorProps(
+                                    dropdownSearchDecoration: InputDecoration(
+                                      labelText: 'Paroisse',
+                                      prefixIcon: Icon(Icons.church),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                              popupProps: const PopupProps.menu(
+                                showSearchBox: true,
+                                searchFieldProps: TextFieldProps(
+                                  decoration: InputDecoration(
+                                    hintText: 'Rechercher une paroisse...',
+                                  ),
+                                ),
+                              ),
+                              validator: (value) => value == null
+                                  ? 'Veuillez sélectionner une paroisse'
+                                  : null,
+                            ),
+                      const SizedBox(height: 16),
+
                       // Mot de passe
                       TextFormField(
                         controller: _passwordController,
@@ -366,9 +551,8 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                         ),
                         validator: (value) => value != null && value.length >= 8
                             ? null
-                            : 'Mot de passe trop court',
+                            : 'Mot de passe trop court (min. 8 caractères)',
                       ),
-
                       const SizedBox(height: 16),
 
                       // Confirmation mot de passe
@@ -397,9 +581,9 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                             ? null
                             : 'Les mots de passe ne correspondent pas',
                       ),
-
                       const SizedBox(height: 32),
 
+                      // Bouton d'inscription
                       _isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : SizedBox(
@@ -423,6 +607,7 @@ class _RegisterParoissienScreenState extends State<RegisterParoissienScreen> {
                             ),
                       const SizedBox(height: 16),
 
+                      // Lien vers connexion
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [

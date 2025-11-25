@@ -7,6 +7,7 @@ import '../../models/pain_du_jour.dart';
 import '../../models/annonce.dart';
 import '../../models/evenement.dart';
 import '../../services/home_service.dart';
+import '../../services/auth_service.dart';
 import 'widgets/pain_du_jour_card.dart';
 import 'widgets/banniere_spirituelle.dart';
 import 'widgets/annonce_carousel.dart';
@@ -16,15 +17,18 @@ class HomeScreen extends StatefulWidget {
   final String token;
   final String userName;
   final String paroisse;
+  final int paroisseId;
+  final int userId;
+  final String userEmail;
 
   const HomeScreen({
     super.key,
     required this.token,
     required this.userName,
     required this.paroisse,
-    required paroisseId,
-    required userId,
-    required userEmail,
+    required this.paroisseId,
+    required this.userId,
+    required this.userEmail,
   });
 
   @override
@@ -34,12 +38,14 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late final HomeService _homeService;
+  late final AuthService _authService;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
   PainDuJour? _painDuJour;
   List<Annonce> _annonces = [];
   List<Evenement> _evenements = [];
+  User? _currentUser;
 
   bool _isLoading = true;
   bool _isLoadingMoreAnnonces = false;
@@ -76,6 +82,8 @@ class _HomeScreenState extends State<HomeScreen>
       ),
     );
 
+    _authService = AuthService();
+
     _loadData();
 
     _annonceScrollController.addListener(_loadMoreAnnonces);
@@ -90,12 +98,14 @@ class _HomeScreenState extends State<HomeScreen>
         _homeService.fetchPainDuJour(),
         _homeService.fetchAnnonces(page: 1),
         _homeService.fetchEvenements(page: 1),
+        _fetchUserDetails(), // Charger les détails de l'utilisateur
       ]);
 
       setState(() {
         _painDuJour = results[0] as PainDuJour?;
         _annonces = results[1] as List<Annonce>;
         _evenements = results[2] as List<Evenement>;
+        _currentUser = results[3] as User?;
         _isLoading = false;
         _annoncesPage = 1;
         _evenementsPage = 1;
@@ -116,6 +126,15 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
       }
+    }
+  }
+
+  Future<User?> _fetchUserDetails() async {
+    try {
+      return await _authService.fetchMe();
+    } catch (e) {
+      debugPrint('Erreur chargement utilisateur: $e');
+      return null;
     }
   }
 
@@ -262,6 +281,36 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  Widget _buildLocationInfo(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -359,27 +408,52 @@ class _HomeScreenState extends State<HomeScreen>
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.church,
-                                color: Colors.white70,
-                                size: 16,
+                          const SizedBox(height: 12),
+
+                          // Informations de localisation
+                          if (_currentUser != null) ...[
+                            _buildLocationInfo(
+                              Icons.church,
+                              'Paroisse',
+                              _currentUser!.paroisseNom ?? widget.paroisse,
+                            ),
+                            if (_currentUser!.dioceseNom != null &&
+                                _currentUser!.dioceseNom!.isNotEmpty)
+                              _buildLocationInfo(
+                                Icons.location_city,
+                                'Diocèse',
+                                _currentUser!.dioceseNom!,
                               ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  widget.paroisse,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
+                            if (_currentUser!.paysNom != null &&
+                                _currentUser!.paysNom!.isNotEmpty)
+                              _buildLocationInfo(
+                                Icons.flag,
+                                'Pays',
+                                _currentUser!.paysNom!,
+                              ),
+                          ] else ...[
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.church,
+                                  color: Colors.white70,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    widget.paroisse,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
+                              ],
+                            ),
+                          ],
+
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               const Icon(

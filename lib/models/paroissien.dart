@@ -2,12 +2,14 @@ class Paroissien {
   final String? sexe;
   final String? situationMatrimoniale;
   final String? dateNaiss;
+  final String? lieuHabitation;
   final List<String> sacrements;
 
   Paroissien({
     this.sexe,
     this.situationMatrimoniale,
     this.dateNaiss,
+    this.lieuHabitation,
     this.sacrements = const [],
   });
 
@@ -24,6 +26,7 @@ class Paroissien {
       sexe: json['sexe'],
       situationMatrimoniale: json['situation_matrimoniale'],
       dateNaiss: json['date_naiss'],
+      lieuHabitation: json['lieu_habitation'],
       sacrements: sacrementsList,
     );
   }

@@ -83,6 +83,7 @@ class AuthService {
     required String situationMatrimoniale,
     required String dateNaiss,
     required List<String> sacrementsRecus,
+    required String lieuHabitation,
   }) async {
     try {
       final response = await _dio.post(

@@ -106,6 +106,7 @@ class ProfileService {
     required String sexe,
     required String situation,
     required String dateNaissance,
+    required String lieuHabitation,
     required List<String> sacrements,
     required int paroisseId,
   }) async {
@@ -119,6 +120,7 @@ class ProfileService {
           'sexe': sexe,
           'situation_matrimoniale': situation,
           'date_naiss': dateNaissance,
+          'lieu_habitation': lieuHabitation,
           'sacrement_recu': sacrements,
           'paroisse_id': paroisseId,
         },

@@ -31,7 +31,7 @@ android {
         applicationId = "com.homenya.paroisse_smart_flutter2"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 10
+        versionCode = 11
         versionName = "1.0.0.1"
     }
 

@@ -24,7 +24,8 @@ dependencies:
   intl: ^0.20.2  
   url_launcher: ^6.2.5
   dropdown_search: ^5.0.6
-  shared_preferences: ^2.5.3
+  # shared_preferences: ^2.5.3
+  shared_preferences: ^2.2.2
   connectivity_plus: ^7.0.0
   syncfusion_flutter_pdfviewer: ^31.1.19
   path_provider: ^2.0.15

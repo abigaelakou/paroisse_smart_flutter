@@ -10,7 +10,7 @@ class User {
   final String sexe;
   final String situationMatrimoniale;
   final String dateNaissance;
-  final String lieuHabitation;
+  final String? lieuHabitation;
   final List<String> sacrements;
 
   User({
@@ -77,7 +77,7 @@ class User {
       situationMatrimoniale:
           json['paroissien']?['situation_matrimoniale'] as String? ?? '',
       dateNaissance: json['paroissien']?['date_naiss'] as String? ?? '',
-      lieuHabitation: json['lieu_habitation'] ?? '',
+      lieuHabitation: json['paroissien']?['lieu_habitation'] ?? '',
       sacrements: sacrementsList,
     );
   }

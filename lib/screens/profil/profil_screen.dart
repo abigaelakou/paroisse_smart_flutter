@@ -163,10 +163,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     List<String> sacrements = List.from(_user!.sacrements);
 
     // Trouver la paroisse actuelle dans la liste
-    models.Paroisse? selectedParoisse = _paroisses.firstWhere(
-      (p) => p.id == _user!.paroisseId,
-      orElse: () => _paroisses.first,
-    );
+    models.Paroisse? selectedParoisse;
+    try {
+      selectedParoisse = _paroisses.firstWhere(
+        (p) => p.id == _user!.paroisseId,
+      );
+    } catch (e) {
+      selectedParoisse = _paroisses.isNotEmpty ? _paroisses.first : null;
+    }
 
     final formKey = GlobalKey<FormState>();
 
@@ -185,235 +189,315 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Text("Modifier mes infos"),
             ],
           ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Nom
-                  TextFormField(
-                    controller: nameController,
-                    inputFormatters: [UpperCaseTextFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: "Nom et Prénom(s) complet",
-                      prefixIcon: Icon(Icons.person),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Veuillez entrer votre nom'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email
-                  TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return 'Veuillez entrer votre email';
-                      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                      if (!emailRegex.hasMatch(value)) return 'Email invalide';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Contact
-                  TextFormField(
-                    controller: contactController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Contact',
-                      prefixIcon: Icon(Icons.phone),
-                      border: OutlineInputBorder(),
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(15),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return 'Veuillez entrer votre contact';
-                      if (value.length < 8 || value.length > 15) {
-                        return 'Le contact doit contenir entre 8 et 15 chiffres';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  // Lieu d'habitation
-                  TextFormField(
-                    controller: lieuHabitationController,
-                    inputFormatters: [UpperCaseTextFormatter()],
-                    decoration: const InputDecoration(
-                      labelText: "Lieu d'habitation",
-                      prefixIcon: Icon(Icons.location_on),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Veuillez entrer votre lieu d\'habitation'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  // Sexe
-                  DropdownButtonFormField<String>(
-                    value: sexe,
-                    items: ['Masculin', 'Féminin']
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (val) => setStateDialog(() => sexe = val),
-                    decoration: const InputDecoration(
-                      labelText: 'Sexe',
-                      prefixIcon: Icon(Icons.wc),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) =>
-                        value == null ? 'Veuillez sélectionner le sexe' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Situation matrimoniale
-                  DropdownButtonFormField<String>(
-                    value: situation,
-                    items: ['Célibataire', 'Marié(e)', 'Veuf(ve)', 'Divorcé(e)']
-                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                        .toList(),
-                    onChanged: (val) => setStateDialog(() => situation = val),
-                    decoration: const InputDecoration(
-                      labelText: 'Situation matrimoniale',
-                      prefixIcon: Icon(Icons.favorite),
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) => value == null
-                        ? 'Veuillez sélectionner la situation matrimoniale'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Date de naissance
-                  TextFormField(
-                    controller: dateNaissController,
-                    decoration: const InputDecoration(
-                      labelText: 'Date de naissance (YYYY-MM-DD)',
-                      prefixIcon: Icon(Icons.cake),
-                      border: OutlineInputBorder(),
-                    ),
-                    readOnly: true,
-                    onTap: () async {
-                      FocusScope.of(context).requestFocus(FocusNode());
-                      final initial =
-                          DateTime.tryParse(dateNaissController.text) ??
-                          DateTime(2000);
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: initial,
-                        firstDate: DateTime(1900),
-                        lastDate: DateTime.now(),
-                      );
-                      if (date != null) {
-                        setStateDialog(() {
-                          dateNaissController.text = date
-                              .toIso8601String()
-                              .substring(0, 10);
-                        });
-                      }
-                    },
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? 'Date de naissance requise'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Sacrements reçus
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade400),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'Sacrements reçus',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Nom
+                    TextFormField(
+                      controller: nameController,
+                      inputFormatters: [UpperCaseTextFormatter()],
+                      style: const TextStyle(fontSize: 16),
+                      decoration: const InputDecoration(
+                        labelText: "Nom et Prénom(s) complet",
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.person),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
                         ),
-                        ...['Baptême', 'Confirmation', 'Mariage', 'Aucun'].map(
-                          (s) => CheckboxListTile(
-                            value: sacrements.contains(s),
-                            onChanged: (val) {
-                              setStateDialog(() {
-                                if (val == true) {
-                                  if (s == 'Aucun') {
-                                    sacrements.clear();
-                                  }
-                                  sacrements.add(s);
-                                  if (s != 'Aucun') {
-                                    sacrements.remove('Aucun');
-                                  }
-                                } else {
-                                  sacrements.remove(s);
-                                }
-                              });
-                            },
-                            title: Text(s),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            dense: true,
-                          ),
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Veuillez entrer votre nom'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: const TextStyle(fontSize: 16),
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
                         ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez entrer votre email';
+                        }
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        if (!emailRegex.hasMatch(value)) {
+                          return 'Email invalide';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Contact
+                    TextFormField(
+                      controller: contactController,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(fontSize: 16),
+                      decoration: const InputDecoration(
+                        labelText: 'Contact',
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.phone),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(15),
                       ],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez entrer votre contact';
+                        }
+                        if (value.length < 8 || value.length > 15) {
+                          return 'Le contact doit contenir entre 8 et 15 chiffres';
+                        }
+                        return null;
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // Paroisse
-                  _isLoadingParoisses
-                      ? const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: CircularProgressIndicator(),
-                        )
-                      : DropdownSearch<models.Paroisse>(
-                          items: _paroisses,
-                          selectedItem: selectedParoisse,
-                          itemAsString: (paroisse) => paroisse.nom,
-                          onChanged: (paroisse) =>
-                              setStateDialog(() => selectedParoisse = paroisse),
-                          dropdownDecoratorProps: const DropDownDecoratorProps(
-                            dropdownSearchDecoration: InputDecoration(
-                              labelText: 'Paroisse',
-                              prefixIcon: Icon(Icons.church),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                          popupProps: const PopupProps.menu(
-                            showSearchBox: true,
-                            searchFieldProps: TextFieldProps(
-                              decoration: InputDecoration(
-                                hintText: 'Rechercher une paroisse...',
-                                prefixIcon: Icon(Icons.search),
+                    // Lieu d'habitation
+                    TextFormField(
+                      controller: lieuHabitationController,
+                      inputFormatters: [UpperCaseTextFormatter()],
+                      style: const TextStyle(fontSize: 16),
+                      decoration: const InputDecoration(
+                        labelText: "Lieu d'habitation",
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.location_on),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Veuillez entrer votre lieu d\'habitation'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Sexe
+                    DropdownButtonFormField<String>(
+                      value: sexe,
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                      items: ['Masculin', 'Féminin']
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
+                          .toList(),
+                      onChanged: (val) => setStateDialog(() => sexe = val),
+                      decoration: const InputDecoration(
+                        labelText: 'Sexe',
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.wc),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) => value == null
+                          ? 'Veuillez sélectionner le sexe'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Situation matrimoniale
+                    DropdownButtonFormField<String>(
+                      value: situation,
+                      style: const TextStyle(fontSize: 16, color: Colors.black),
+                      items:
+                          ['Célibataire', 'Marié(e)', 'Veuf(ve)', 'Divorcé(e)']
+                              .map(
+                                (s) =>
+                                    DropdownMenuItem(value: s, child: Text(s)),
+                              )
+                              .toList(),
+                      onChanged: (val) => setStateDialog(() => situation = val),
+                      decoration: const InputDecoration(
+                        labelText: 'Situation matrimoniale',
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.favorite),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      validator: (value) => value == null
+                          ? 'Veuillez sélectionner la situation matrimoniale'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Date de naissance
+                    TextFormField(
+                      controller: dateNaissController,
+                      style: const TextStyle(fontSize: 16),
+                      decoration: const InputDecoration(
+                        labelText: 'Date de naissance (YYYY-MM-DD)',
+                        labelStyle: TextStyle(fontSize: 14),
+                        prefixIcon: Icon(Icons.cake),
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      readOnly: true,
+                      onTap: () async {
+                        FocusScope.of(context).requestFocus(FocusNode());
+                        DateTime initial;
+                        try {
+                          initial =
+                              DateTime.tryParse(dateNaissController.text) ??
+                              DateTime(2000);
+                        } catch (e) {
+                          initial = DateTime(2000);
+                        }
+
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: initial,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          setStateDialog(() {
+                            dateNaissController.text = date
+                                .toIso8601String()
+                                .substring(0, 10);
+                          });
+                        }
+                      },
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'Date de naissance requise'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Sacrements reçus
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              "Sacrements reçus",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                          validator: (value) => value == null
-                              ? 'Veuillez sélectionner une paroisse'
-                              : null,
-                        ),
-                ],
+                          ...[
+                            'Baptême',
+                            'Confirmation',
+                            'Mariage',
+                            'Aucun',
+                          ].map(
+                            (s) => CheckboxListTile(
+                              value: sacrements.contains(s),
+                              onChanged: (val) {
+                                setStateDialog(() {
+                                  if (val == true) {
+                                    if (s == 'Aucun') {
+                                      sacrements.clear();
+                                    }
+                                    sacrements.add(s);
+                                    if (s != 'Aucun') {
+                                      sacrements.remove('Aucun');
+                                    }
+                                  } else {
+                                    sacrements.remove(s);
+                                  }
+                                });
+                              },
+                              title: Text(
+                                s,
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              dense: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Paroisse
+                    _isLoadingParoisses
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: CircularProgressIndicator(),
+                          )
+                        : DropdownSearch<models.Paroisse>(
+                            items: _paroisses,
+                            selectedItem: selectedParoisse,
+                            itemAsString: (paroisse) => paroisse.nom,
+                            onChanged: (paroisse) => setStateDialog(
+                              () => selectedParoisse = paroisse,
+                            ),
+                            dropdownDecoratorProps:
+                                const DropDownDecoratorProps(
+                                  dropdownSearchDecoration: InputDecoration(
+                                    labelText: 'Paroisse',
+                                    labelStyle: TextStyle(fontSize: 14),
+                                    prefixIcon: Icon(Icons.church),
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 16,
+                                    ),
+                                  ),
+                                ),
+                            popupProps: const PopupProps.menu(
+                              showSearchBox: true,
+                              searchFieldProps: TextFieldProps(
+                                decoration: InputDecoration(
+                                  hintText: 'Rechercher une paroisse...',
+                                  prefixIcon: Icon(Icons.search),
+                                ),
+                              ),
+                            ),
+                            validator: (value) => value == null
+                                ? 'Veuillez sélectionner une paroisse'
+                                : null,
+                          ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -665,6 +749,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Icons.phone,
                     Colors.green,
                   ),
+                  if (_user!.lieuHabitation != null &&
+                      _user!.lieuHabitation!.isNotEmpty)
+                    _buildInfoTile(
+                      "Lieu d'habitation",
+                      _user!.lieuHabitation ?? 'Non définie',
+                      Icons.location_on,
+                      Colors.blue,
+                    ),
                   _buildInfoTile(
                     "Paroisse",
                     _user!.paroisseNom ?? 'Non définie',

@@ -8,6 +8,7 @@ import '../../models/annonce.dart';
 import '../../models/evenement.dart';
 import '../../services/home_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/badge_service.dart';
 import 'widgets/pain_du_jour_card.dart';
 import 'widgets/banniere_spirituelle.dart';
 import 'widgets/annonce_carousel.dart';
@@ -36,9 +37,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final HomeService _homeService;
   late final AuthService _authService;
+  late final BadgeService _badgeService;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -53,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   int _annoncesPage = 1;
   int _evenementsPage = 1;
+  int _unreadCount = 0;
 
   final ScrollController _annonceScrollController = ScrollController();
   final ScrollController _evenementScrollController = ScrollController();
@@ -60,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _animationController = AnimationController(
       vsync: this,
@@ -83,11 +87,20 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     _authService = AuthService();
+    _badgeService = BadgeService();
 
     _loadData();
 
     _annonceScrollController.addListener(_loadMoreAnnonces);
     _evenementScrollController.addListener(_loadMoreEvenements);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Quand l'utilisateur ouvre l'app, réinitialiser le badge
+      _markContentAsRead();
+    }
   }
 
   Future<void> _loadData() async {
@@ -98,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen>
         _homeService.fetchPainDuJour(),
         _homeService.fetchAnnonces(page: 1),
         _homeService.fetchEvenements(page: 1),
-        _fetchUserDetails(), // Charger les détails de l'utilisateur
+        _fetchUserDetails(),
       ]);
 
       setState(() {
@@ -112,6 +125,12 @@ class _HomeScreenState extends State<HomeScreen>
       });
 
       _animationController.forward();
+
+      // Vérifier les nouveaux contenus
+      await _checkForNewContent();
+
+      // Marquer comme lu lorsque l'utilisateur consulte
+      await _markContentAsRead();
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
@@ -126,6 +145,40 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
       }
+    }
+  }
+
+  Future<void> _checkForNewContent() async {
+    try {
+      final unreadCount = await _badgeService.checkNewContent(
+        currentPainId: _painDuJour?.id,
+        currentAnnonceId: _annonces.isNotEmpty ? _annonces.first.id : null,
+        currentEvenementId: _evenements.isNotEmpty
+            ? _evenements.first.id
+            : null,
+      );
+
+      setState(() {
+        _unreadCount = unreadCount;
+      });
+    } catch (e) {
+      debugPrint('Erreur vérification nouveaux contenus: $e');
+    }
+  }
+
+  Future<void> _markContentAsRead() async {
+    try {
+      await _badgeService.markAsRead(
+        painId: _painDuJour?.id,
+        annonceId: _annonces.isNotEmpty ? _annonces.first.id : null,
+        evenementId: _evenements.isNotEmpty ? _evenements.first.id : null,
+      );
+
+      setState(() {
+        _unreadCount = 0;
+      });
+    } catch (e) {
+      debugPrint('Erreur marquage comme lu: $e');
     }
   }
 
@@ -217,6 +270,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _annonceScrollController.dispose();
     _evenementScrollController.dispose();
     _animationController.dispose();
@@ -228,6 +282,7 @@ class _HomeScreenState extends State<HomeScreen>
     required IconData icon,
     required Color color,
     int? count,
+    bool showNewBadge = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -260,7 +315,23 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
-          if (count != null)
+          if (showNewBadge)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'NOUVEAU',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+          if (count != null && !showNewBadge)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -324,6 +395,45 @@ class _HomeScreenState extends State<HomeScreen>
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          // Badge de notification
+          if (_unreadCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications),
+                    onPressed: () {
+                      // Optionnel: afficher un dialogue des nouveautés
+                    },
+                  ),
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Text(
+                        _unreadCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {

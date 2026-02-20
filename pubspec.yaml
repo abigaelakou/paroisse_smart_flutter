@@ -1,0 +1,60 @@
+name: paroisse_smart_flutter
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+2
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # ✅ Ajout de flutter_localizations pour le support du français
+  flutter_localizations:
+    sdk: flutter
+  
+  dio: ^5.4.0
+  flutter_riverpod: ^2.5.1
+  flutter_dotenv: ^5.1.0
+  google_fonts: ^6.1.0
+  cupertino_icons: ^1.0.8
+  carousel_slider: ^5.1.1
+  intl: ^0.20.2  
+  url_launcher: ^6.2.5
+  dropdown_search: ^5.0.6
+  # shared_preferences: ^2.5.3
+  shared_preferences: ^2.2.2
+  connectivity_plus: ^7.0.0
+  syncfusion_flutter_pdfviewer: ^31.1.19
+  path_provider: ^2.0.15
+  open_file: ^3.3.2
+  lottie: ^3.1.0
+  fluttertoast: ^8.2.1
+  flutter_app_badger: ^1.5.0
+  
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+  
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo/app_icon.png"
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/images/logo/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/logo/logo1.png
+    - assets/images/logo/app_icon.png
+    - assets/images/banner.jpg
+    - assets/animations/success.json

@@ -1,0 +1,25 @@
+workflows:
+  ios-release:
+    name: iOS Release
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get Flutter dependencies
+        script: flutter pub get
+
+      - name: Build iOS release
+        script: flutter build ipa --release
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+    publishing:
+      app_store_connect:
+        apple_id: $APPLE_ID
+        password: $APP_STORE_CONNECT_PASSWORD
+        app_identifier: "com.tonentreprise.tonapp" # ⚠️ remplace par ton Bundle ID
+        team_id: $APP_STORE_TEAM_ID
+        submit_to_testflight: true
+        submit_to_app_store: false
